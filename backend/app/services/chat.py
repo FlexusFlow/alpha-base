@@ -1,0 +1,86 @@
+import asyncio
+from collections.abc import AsyncGenerator
+
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
+from app.config import Settings
+from app.models.chat import ChatMessage
+from app.services.vectorstore import VectorStoreService
+
+SYSTEM_PROMPT = """You are a helpful AI assistant for ZipTrader knowledge base about stock market investing and trading.
+Use the provided context from transcribed YouTube videos to answer questions accurately.
+If context doesn't contain relevant info, say so and provide general knowledge.
+Cite specific sources when using context information.
+
+Context:
+{context}"""
+
+
+class ChatService:
+    def __init__(self, settings: Settings):
+        self.settings = settings
+        self.vectorstore = VectorStoreService(settings)
+        self.llm = ChatOpenAI(
+            model=settings.chat_model,
+            max_tokens=settings.chat_max_tokens,
+            openai_api_key=settings.openai_api_key,
+            streaming=True,
+        )
+
+    def _retrieve_context(self, query: str) -> tuple[str, list[str]]:
+        """Retrieve relevant context from the vector store."""
+        docs = self.vectorstore.similarity_search(
+            query=query, k=self.settings.rag_retrieval_k
+        )
+
+        if not docs:
+            return "No relevant context found.", []
+
+        context_parts = []
+        sources = []
+        for i, doc in enumerate(docs):
+            meta = doc.metadata or {}
+            title = meta.get("title", "Unknown")
+            source_url = meta.get("source", "")
+            context_parts.append(f"[Source {i + 1}: {title}]\n{doc.page_content}")
+            if source_url and source_url not in sources:
+                sources.append(source_url)
+
+        return "\n\n".join(context_parts), sources
+
+    def _build_messages(
+        self,
+        context: str,
+        history: list[ChatMessage],
+        message: str,
+    ) -> list:
+        """Build the message list for the LLM."""
+        messages = [SystemMessage(content=SYSTEM_PROMPT.format(context=context))]
+
+        for msg in history:
+            if msg.role == "user":
+                messages.append(HumanMessage(content=msg.content))
+            elif msg.role == "assistant":
+                messages.append(AIMessage(content=msg.content))
+
+        messages.append(HumanMessage(content=message))
+        return messages
+
+    async def stream(
+        self, message: str, history: list[ChatMessage]
+    ) -> AsyncGenerator[dict, None]:
+        """Stream the RAG response. Yields dicts with 'token' or 'done' keys."""
+        context, sources = await asyncio.to_thread(
+            self._retrieve_context, message
+        )
+        messages = self._build_messages(context, history, message)
+
+        full_response = ""
+        async for chunk in self.llm.astream(messages):
+            token = chunk.content
+            if token:
+                full_response += token
+                yield {"token": token}
+
+        yield {"done": True, "sources": sources, "full_response": full_response}

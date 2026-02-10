@@ -1,0 +1,35 @@
+# Environment
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+.uv/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# DeepLake store
+backend/knowledge_base/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Plan files
+.claude/plans/
+.claude/settings.local.json
+
+.env.local
