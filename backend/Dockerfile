@@ -13,5 +13,7 @@ RUN uv sync --no-dev --frozen 2>/dev/null || uv sync --no-dev
 
 COPY . .
 
-ENV PORT=8000
-CMD uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
+RUN useradd -m appuser
+USER appuser
+
+CMD ["sh", "-c", "uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
