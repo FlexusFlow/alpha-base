@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8000';
+const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function DELETE(
   request: NextRequest,
@@ -18,7 +18,7 @@ export async function DELETE(
 
   try {
     const backendResponse = await fetch(
-      `${PYTHON_BACKEND_URL}/v1/api/knowledge/channels/${channelId}?user_id=${user.id}`,
+      `${NEXT_PUBLIC_API_BASE_URL}/v1/api/knowledge/channels/${channelId}?user_id=${user.id}`,
       { method: 'DELETE' },
     );
 

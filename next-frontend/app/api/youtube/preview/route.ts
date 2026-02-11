@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { saveChannelWithVideos } from '@/lib/supabase/channels';
 import { YTChannelPreview, YTVideo } from '@/lib/types/youtube';
 
-const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || 'http://localhost:8000';
+const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 function normalizeChannelUrl(url: string): string {
   try {
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
       // CACHE MISS: Scrape from Python backend (all videos)
       const backendParams = new URLSearchParams({ url });
       const backendResponse = await fetch(
-        `${PYTHON_BACKEND_URL}/v1/api/youtube/preview?${backendParams}`,
+        `${NEXT_PUBLIC_API_BASE_URL}/v1/api/youtube/preview?${backendParams}`,
       );
 
       if (!backendResponse.ok) {
