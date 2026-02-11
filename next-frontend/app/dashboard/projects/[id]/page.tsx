@@ -8,7 +8,8 @@ interface Props {
   params: Promise<{ id: string }>
 }
 
-async function ProjectChatContent({ id }: { id: string }) {
+async function ProjectChatContent({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -48,12 +49,10 @@ async function ProjectChatContent({ id }: { id: string }) {
   )
 }
 
-export default async function ProjectChatPage({ params }: Props) {
-  const { id } = await params
-
+export default function ProjectChatPage({ params }: Props) {
   return (
     <Suspense fallback={<div className="p-8">Loading...</div>}>
-      <ProjectChatContent id={id} />
+      <ProjectChatContent params={params} />
     </Suspense>
   )
 }

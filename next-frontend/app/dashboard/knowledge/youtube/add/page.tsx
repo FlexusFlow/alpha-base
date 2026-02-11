@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,12 +14,22 @@ import { VideoTable } from '@/components/youtube/video-table';
 import { JobNotification } from '@/components/youtube/job-notification';
 import { YTChannelPreview } from '@/lib/types/youtube';
 import { JobStatusUpdate } from '@/lib/types/knowledge';
-import { createBrowserChannelHelpers } from '@/lib/supabase/channels';
 
 type Phase = 'idle' | 'loading' | 'ready' | 'submitting' | 'processing';
 
 export default function AddYouTubeChannelPage() {
-  const [url, setUrl] = useState('' );
+  return (
+    <Suspense>
+      <AddYouTubeChannelContent />
+    </Suspense>
+  );
+}
+
+function AddYouTubeChannelContent() {
+  const searchParams = useSearchParams();
+  const urlParam = searchParams.get('url');
+
+  const [url, setUrl] = useState(urlParam ?? '');
   const [preview, setPreview] = useState<YTChannelPreview | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [jobId, setJobId] = useState<string | null>(null);
@@ -29,9 +40,15 @@ export default function AddYouTubeChannelPage() {
     pageIndex: 0,
     pageSize: 20,
     });
-  const [transcribingVideoIds, setTranscribingVideoIds] = useState<string[]>([]);
+  const autoTriggered = useRef(false);
 
-  const channelHelpers = useMemo(() => createBrowserChannelHelpers(), []);
+  // Auto-trigger preview when navigating from a channel card with ?url= param
+  useEffect(() => {
+    if (urlParam && !autoTriggered.current) {
+      autoTriggered.current = true;
+      handlePreview();
+    }
+  }, [urlParam]);
 
   useEffect(() => {
     if (preview) {
@@ -108,26 +125,7 @@ export default function AddYouTubeChannelPage() {
     setPhase('submitting');
     setError(null);
 
-    const selectedVideoIds = Array.from(selectedIds);
-
-    // Filter out already-transcribed videos
-    let idsToTranscribe = selectedVideoIds;
-    try {
-      const alreadyTranscribed = await channelHelpers.getTranscribedVideoIds(selectedVideoIds);
-      if (alreadyTranscribed.size > 0) {
-        idsToTranscribe = selectedVideoIds.filter((id) => !alreadyTranscribed.has(id));
-      }
-    } catch {
-      // If check fails, proceed with all selected videos
-    }
-
-    if (idsToTranscribe.length === 0) {
-      setError('All selected videos have already been transcribed.');
-      setPhase('ready');
-      return;
-    }
-
-    setTranscribingVideoIds(idsToTranscribe);
+    const idsToTranscribe = Array.from(selectedIds);
 
     const videosToProcess = preview.videos
       .filter((v) => idsToTranscribe.includes(v.video_id))
@@ -150,15 +148,22 @@ export default function AddYouTubeChannelPage() {
   const handleJobComplete = useCallback((data: JobStatusUpdate) => {
     setPhase('ready');
     setJobId(null);
+    setSelectedIds(new Set(data.failed_videos));
 
-    // Mark successfully transcribed videos in Supabase
-    const failedSet = new Set(data.failed_videos);
-    const succeededIds = transcribingVideoIds.filter((id) => !failedSet.has(id));
-    if (succeededIds.length > 0) {
-      channelHelpers.markVideosTranscribed(succeededIds).catch(() => {/* best effort */});
+    // Mark succeeded videos as transcribed so checkboxes disable and rowSelection re-syncs
+    const succeededSet = new Set(data.succeeded_videos);
+    if (succeededSet.size > 0) {
+      setPreview((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          videos: prev.videos.map((v) =>
+            succeededSet.has(v.video_id) ? { ...v, is_transcribed: true } : v
+          ),
+        };
+      });
     }
-    setTranscribingVideoIds([]);
-  }, [transcribingVideoIds, channelHelpers]);
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handlePreview();
