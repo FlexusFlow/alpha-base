@@ -18,5 +18,6 @@ export interface JobStatusUpdate {
   total_videos: number;
   processed_videos: number;
   failed_videos: string[];
+  succeeded_videos: string[];
   message: string;
 }

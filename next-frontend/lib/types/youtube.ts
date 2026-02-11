@@ -4,6 +4,7 @@ export interface YTVideo {
   url: string;
   views: number;
   category: string;
+  is_transcribed: boolean;
 }
 
 export interface YTChannelPreview {

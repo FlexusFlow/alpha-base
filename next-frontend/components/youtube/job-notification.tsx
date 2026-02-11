@@ -15,6 +15,8 @@ export function JobNotification({ jobId, onComplete }: JobNotificationProps) {
   const { toast } = useToast();
   const eventSourceRef = useRef<EventSource | null>(null);
   const toastIdRef = useRef<string | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     if (!jobId) return;
@@ -33,7 +35,7 @@ export function JobNotification({ jobId, onComplete }: JobNotificationProps) {
             title: 'Success',
             description: `${data.message} (${data.processed_videos}/${data.total_videos} videos processed)`,
           });
-          onComplete?.(data);
+          onCompleteRef.current?.(data);
         } else if (data.status === 'failed') {
           if (toastIdRef.current) {
             toastIdRef.current = null;
@@ -44,7 +46,7 @@ export function JobNotification({ jobId, onComplete }: JobNotificationProps) {
             description: `${data.message}${data.failed_videos.length > 0 ? ` (${data.failed_videos.length} failed)` : ''}`,
             variant: 'destructive',
           });
-          onComplete?.(data);
+          onCompleteRef.current?.(data);
         } else if (data.status === 'in_progress') {
           // Show progress toast
           const progressPercent = Math.round(data.progress);
@@ -72,7 +74,7 @@ export function JobNotification({ jobId, onComplete }: JobNotificationProps) {
     return () => {
       es.close();
     };
-  }, [jobId, onComplete, toast]);
+  }, [jobId, toast]);
 
   return null;
 }

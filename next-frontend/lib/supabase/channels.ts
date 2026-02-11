@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
-import { DbCategory } from '@/lib/types/database';
+import { DbCategory, DbChannel } from '@/lib/types/database';
 import { YTChannelPreview, YTVideo } from '@/lib/types/youtube';
 
 async function getCategoryMap(supabase: SupabaseClient): Promise<Map<string, number>> {
@@ -104,11 +104,26 @@ export async function markVideosTranscribed(
   if (error) throw new Error(`Failed to mark videos as transcribed: ${error.message}`);
 }
 
+export async function getChannels(
+  supabase: SupabaseClient,
+): Promise<DbChannel[]> {
+  const { data, error } = await supabase
+    .from('channels')
+    .select('id, channel_title, channel_url, total_videos, last_scraped_at, created_at')
+    .order('last_scraped_at', { ascending: false, nullsFirst: false });
+
+  if (error) throw new Error(`Failed to fetch channels: ${error.message}`);
+  return (data ?? []) as DbChannel[];
+}
+
 // Convenience wrappers using browser client (for use in client components)
 export function createBrowserChannelHelpers() {
   const supabase = createClient();
 
   return {
+    async getChannels() {
+      return getChannels(supabase);
+    },
     async getTranscribedVideoIds(videoIds: string[]) {
       return getTranscribedVideoIds(supabase, videoIds);
     },

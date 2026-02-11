@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('videos')
-      .select('video_id, title, url, views, category_id, categories(name)', { count: 'exact' })
+      .select('video_id, title, url, views, is_transcribed, category_id, categories(name)', { count: 'exact' })
       .eq('channel_id', channelId)
       .order('views', { ascending: false });
 
@@ -151,6 +151,7 @@ export async function GET(request: NextRequest) {
       title: v.title,
       url: v.url,
       views: v.views,
+      is_transcribed: v.is_transcribed ?? false,
       category: (v.categories as unknown as { name: string } | null)?.name || 'Unknown',
     }));
 

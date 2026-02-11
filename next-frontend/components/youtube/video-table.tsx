@@ -100,6 +100,7 @@ export function VideoTable({ videos, totalCount, selectedIds, onSelectionChange,
         <Checkbox
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
+          disabled={!row.getCanSelect()}
           aria-label="Select row"
         />
       ),
@@ -133,6 +134,14 @@ export function VideoTable({ videos, totalCount, selectedIds, onSelectionChange,
     {
       accessorKey: 'category',
       header: 'Category',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <span>{row.original.category}</span>
+          {row.original.is_transcribed && (
+            <span className="text-xs bg-muted px-1.5 py-0.5 rounded">Transcribed</span>
+          )}
+        </div>
+      ),
     },
     {
       id: 'link',
@@ -159,6 +168,7 @@ export function VideoTable({ videos, totalCount, selectedIds, onSelectionChange,
     // pageCount: dataQuery.data?.pageCount, //alternatively directly pass in pageCount instead of rowCount
   
     getSortedRowModel: getSortedRowModel(),
+    enableRowSelection: (row) => !row.original.is_transcribed,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     state: {
@@ -202,7 +212,7 @@ export function VideoTable({ videos, totalCount, selectedIds, onSelectionChange,
           <TableBody>
             {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className={row.original.is_transcribed ? 'opacity-50' : ''}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
