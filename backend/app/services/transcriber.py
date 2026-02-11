@@ -77,6 +77,29 @@ def get_transcript(video_id: str, title: str) -> str:
     raise TranscriptionError(f"No transcript available for {video_id}: {title}")
 
 
+def delete_transcripts(videos: list[dict], transcripts_dir: str) -> int:
+    """Delete transcript markdown files for the given videos.
+
+    Args:
+        videos: List of dicts with 'title' and 'is_transcribed' keys.
+        transcripts_dir: Path to the transcripts directory.
+
+    Returns:
+        Number of files actually deleted.
+    """
+    deleted = 0
+    dir_path = Path(transcripts_dir)
+    for video in videos:
+        if not video.get("is_transcribed"):
+            continue
+        filename = sanitize_filename(video["title"]) + ".md"
+        file_path = dir_path / filename
+        if file_path.exists():
+            file_path.unlink()
+            deleted += 1
+    return deleted
+
+
 def save_transcript_md(video_id: str, title: str, text: str, output_dir: Path) -> Path:
     """Save transcript as markdown file in the PoC format."""
 

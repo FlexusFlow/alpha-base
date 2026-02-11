@@ -39,6 +39,28 @@ class VectorStoreService:
             dataset_path=self.deeplake_path,
         )
 
+    def delete_by_video_ids(self, video_ids: list[str]) -> int:
+        """Delete all vector chunks matching the given video_ids from DeepLake."""
+        if not video_ids:
+            return 0
+
+        db = DeeplakeVectorStore(
+            dataset_path=self.deeplake_path,
+            embedding_function=self.embeddings,
+            overwrite=False,
+        )
+
+        ids_str = ", ".join(f"'{vid}'" for vid in video_ids)
+        query = f"SELECT ids FROM (SELECT * WHERE metadata['video_id'] IN ({ids_str}))"
+        results = db.dataset.query(query)
+
+        matching_ids = results["ids"][:]
+        if len(matching_ids) == 0:
+            return 0
+
+        db.delete(ids=list(matching_ids))
+        return len(matching_ids)
+
     def similarity_search(self, query: str, k: int = 5) -> list:
         """Search the vector store for documents similar to the query."""
         db = DeeplakeVectorStore(

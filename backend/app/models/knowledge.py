@@ -17,6 +17,7 @@ class VideoSelection(BaseModel):
 
 class KnowledgeAddRequest(BaseModel):
     channel_title: str
+    channel_id: str = ""
     videos: list[VideoSelection]
 
 
@@ -34,4 +35,38 @@ class JobStatusResponse(BaseModel):
     processed_videos: int
     failed_videos: list[str]
     succeeded_videos: list[str]
+    message: str
+
+
+class ChannelDeleteResponse(BaseModel):
+    channel_id: str
+    channel_title: str
+    videos_deleted: int
+    vectors_deleted: int
+    files_deleted: int
+    message: str
+
+
+class BulkDeleteRequest(BaseModel):
+    channel_ids: list[str]
+    user_id: str
+
+
+class BulkDeleteItemSuccess(BaseModel):
+    channel_id: str
+    channel_title: str
+    videos_deleted: int
+    vectors_deleted: int
+    files_deleted: int
+
+
+class BulkDeleteItemFailure(BaseModel):
+    channel_id: str
+    channel_title: str
+    error: str
+
+
+class BulkDeleteResponse(BaseModel):
+    succeeded: list[BulkDeleteItemSuccess]
+    failed: list[BulkDeleteItemFailure]
     message: str

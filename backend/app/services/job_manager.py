@@ -15,6 +15,7 @@ class Job:
     failed_videos: list[str] = field(default_factory=list)
     succeeded_videos: list[str] = field(default_factory=list)
     message: str = ""
+    channel_id: str = ""
 
     @property
     def progress(self) -> int:
@@ -56,6 +57,12 @@ class JobManager:
         queue: asyncio.Queue = asyncio.Queue()
         self._subscribers.setdefault(job_id, []).append(queue)
         return queue
+
+    def has_active_job_for_channel(self, channel_id: str) -> Job | None:
+        for job in self._jobs.values():
+            if job.channel_id == channel_id and job.status == JobStatus.IN_PROGRESS:
+                return job
+        return None
 
     def _notify(self, job_id: str, job: Job) -> None:
         for queue in self._subscribers.get(job_id, []):

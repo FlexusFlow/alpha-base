@@ -116,6 +116,20 @@ export async function getChannels(
   return (data ?? []) as DbChannel[];
 }
 
+export async function getTranscribedCount(
+  supabase: SupabaseClient,
+  channelId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('videos')
+    .select('id', { count: 'exact', head: true })
+    .eq('channel_id', channelId)
+    .eq('is_transcribed', true);
+
+  if (error) throw new Error(`Failed to get transcribed count: ${error.message}`);
+  return count ?? 0;
+}
+
 // Convenience wrappers using browser client (for use in client components)
 export function createBrowserChannelHelpers() {
   const supabase = createClient();
@@ -129,6 +143,9 @@ export function createBrowserChannelHelpers() {
     },
     async markVideosTranscribed(videoIds: string[]) {
       return markVideosTranscribed(supabase, videoIds);
+    },
+    async getTranscribedCount(channelId: string) {
+      return getTranscribedCount(supabase, channelId);
     },
   };
 }
