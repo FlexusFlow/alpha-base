@@ -2,9 +2,10 @@ import asyncio
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from supabase import Client
 
 from app.config import Settings
-from app.dependencies import get_job_manager, get_settings
+from app.dependencies import get_job_manager, get_settings, get_supabase
 from app.models.knowledge import (
     JobStatus,
     JobStatusResponse,
@@ -23,6 +24,7 @@ async def process_knowledge_job(
     channel_title: str,
     job_manager: JobManager,
     settings: Settings,
+    supabase: Client,
 ) -> None:
     """Background task: transcribe videos and vectorize them."""
     job_manager.update_job(job_id, status=JobStatus.IN_PROGRESS)
@@ -45,6 +47,15 @@ async def process_knowledge_job(
                 "channel": channel_title,
                 "source": f"https://youtube.com/watch?v={video.video_id}",
             })
+            # Mark video as transcribed in Supabase
+            supabase.table("videos").update(
+                {"is_transcribed": True}
+            ).eq("video_id", video.video_id).execute()
+            # Track successful transcription
+            job = job_manager.get_job(job_id)
+            succeeded = list(job.succeeded_videos) if job else []
+            succeeded.append(video.video_id)
+            job_manager.update_job(job_id, succeeded_videos=succeeded)
         except Exception as e:
             print("EXCEPTION")
             print(e)
@@ -58,6 +69,10 @@ async def process_knowledge_job(
             processed_videos=i + 1,
             message=f"Processed {i + 1}/{len(videos)}: {video.title[:50]}",
         )
+
+        # Delay between requests to avoid YouTube rate limiting
+        if i < len(videos) - 1:
+            await asyncio.sleep(2)
 
     # Batch vectorize all successful transcripts
     if transcripts:
@@ -75,11 +90,28 @@ async def process_knowledge_job(
             )
             return
 
-    job_manager.update_job(
-        job_id,
-        status=JobStatus.COMPLETED,
-        message="Knowledge base updated successfully",
-    )
+    job = job_manager.get_job(job_id)
+    num_failed = len(job.failed_videos) if job else 0
+    num_succeeded = len(videos) - num_failed
+
+    if num_succeeded == 0:
+        job_manager.update_job(
+            job_id,
+            status=JobStatus.FAILED,
+            message=f"All {len(videos)} video(s) failed to transcribe",
+        )
+    elif num_failed > 0:
+        job_manager.update_job(
+            job_id,
+            status=JobStatus.COMPLETED,
+            message=f"{num_succeeded} video(s) added, {num_failed} failed",
+        )
+    else:
+        job_manager.update_job(
+            job_id,
+            status=JobStatus.COMPLETED,
+            message=f"All {num_succeeded} video(s) added successfully",
+        )
 
 
 @router.post("/youtube/add", response_model=KnowledgeAddResponse)
@@ -88,6 +120,7 @@ async def add_youtube_to_knowledge(
     background_tasks: BackgroundTasks,
     job_manager: JobManager = Depends(get_job_manager),
     settings: Settings = Depends(get_settings),
+    supabase: Client = Depends(get_supabase),
 ):
     if not request.videos:
         raise HTTPException(status_code=400, detail="No videos selected")
@@ -100,6 +133,7 @@ async def add_youtube_to_knowledge(
         channel_title=request.channel_title,
         job_manager=job_manager,
         settings=settings,
+        supabase=supabase,
     )
     return KnowledgeAddResponse(
         job_id=job.id,
@@ -123,5 +157,6 @@ async def get_job_status(
         total_videos=job.total_videos,
         processed_videos=job.processed_videos,
         failed_videos=job.failed_videos,
+        succeeded_videos=job.succeeded_videos,
         message=job.message,
     )

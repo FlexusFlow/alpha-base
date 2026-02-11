@@ -13,6 +13,7 @@ class Job:
     total_videos: int = 0
     processed_videos: int = 0
     failed_videos: list[str] = field(default_factory=list)
+    succeeded_videos: list[str] = field(default_factory=list)
     message: str = ""
 
     @property

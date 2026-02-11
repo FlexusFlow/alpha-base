@@ -33,4 +33,5 @@ class JobStatusResponse(BaseModel):
     total_videos: int
     processed_videos: int
     failed_videos: list[str]
+    succeeded_videos: list[str]
     message: str
