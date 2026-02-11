@@ -3,6 +3,7 @@
 set -e
 
 JSON_MODE=false
+NO_BRANCH=false
 SHORT_NAME=""
 BRANCH_NUMBER=""
 ARGS=()
@@ -10,8 +11,11 @@ i=1
 while [ $i -le $# ]; do
     arg="${!i}"
     case "$arg" in
-        --json) 
-            JSON_MODE=true 
+        --json)
+            JSON_MODE=true
+            ;;
+        --no-branch)
+            NO_BRANCH=true
             ;;
         --short-name)
             if [ $((i + 1)) -gt $# ]; then
@@ -41,10 +45,11 @@ while [ $i -le $# ]; do
             BRANCH_NUMBER="$next_arg"
             ;;
         --help|-h) 
-            echo "Usage: $0 [--json] [--short-name <name>] [--number N] <feature_description>"
+            echo "Usage: $0 [--json] [--no-branch] [--short-name <name>] [--number N] <feature_description>"
             echo ""
             echo "Options:"
             echo "  --json              Output in JSON format"
+            echo "  --no-branch         Skip git branch creation (stay on current branch)"
             echo "  --short-name <name> Provide a custom short name (2-4 words) for the branch"
             echo "  --number N          Specify branch number manually (overrides auto-detection)"
             echo "  --help, -h          Show this help message"
@@ -63,7 +68,7 @@ done
 
 FEATURE_DESCRIPTION="${ARGS[*]}"
 if [ -z "$FEATURE_DESCRIPTION" ]; then
-    echo "Usage: $0 [--json] [--short-name <name>] [--number N] <feature_description>" >&2
+    echo "Usage: $0 [--json] [--no-branch] [--short-name <name>] [--number N] <feature_description>" >&2
     exit 1
 fi
 
@@ -271,7 +276,9 @@ if [ ${#BRANCH_NAME} -gt $MAX_BRANCH_LENGTH ]; then
     >&2 echo "[specify] Truncated to: $BRANCH_NAME (${#BRANCH_NAME} bytes)"
 fi
 
-if [ "$HAS_GIT" = true ]; then
+if [ "$NO_BRANCH" = true ]; then
+    >&2 echo "[specify] Skipping branch creation (--no-branch)"
+elif [ "$HAS_GIT" = true ]; then
     git checkout -b "$BRANCH_NAME"
 else
     >&2 echo "[specify] Warning: Git repository not detected; skipped branch creation for $BRANCH_NAME"
