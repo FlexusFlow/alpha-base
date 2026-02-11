@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +13,7 @@ import { VideoTable } from '@/components/youtube/video-table';
 import { JobNotification } from '@/components/youtube/job-notification';
 import { YTChannelPreview } from '@/lib/types/youtube';
 import { JobStatusUpdate } from '@/lib/types/knowledge';
-import { saveChannelWithVideos, markVideosTranscribed, getTranscribedVideoIds } from '@/lib/supabase/channels';
+import { createBrowserChannelHelpers } from '@/lib/supabase/channels';
 
 type Phase = 'idle' | 'loading' | 'ready' | 'submitting' | 'processing';
 
@@ -29,8 +29,9 @@ export default function AddYouTubeChannelPage() {
     pageIndex: 0,
     pageSize: 20,
     });
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [transcribingVideoIds, setTranscribingVideoIds] = useState<string[]>([]);
+
+  const channelHelpers = useMemo(() => createBrowserChannelHelpers(), []);
 
   useEffect(() => {
     if (preview) {
@@ -43,7 +44,11 @@ export default function AddYouTubeChannelPage() {
     setPhase('loading');
     setError(null);
     try {
-      const options: any = { url: url.trim(), limit: pagination.pageSize, skip: (pagination.pageIndex * pagination.pageSize) };
+      const options: { url: string; page: number; pageSize: number; category?: string } = {
+        url: url.trim(),
+        page: pagination.pageIndex + 1,
+        pageSize: pagination.pageSize,
+      };
       if (category) {
         options.category = category;
       }
@@ -66,10 +71,13 @@ export default function AddYouTubeChannelPage() {
       setSelectedIds(new Set());
     }
     setJobId(null);
-    setSaveStatus('idle');
 
     try {
-      const options: any = { url: url.trim(), limit: pagination.pageSize, skip: (pagination.pageIndex * pagination.pageSize) };
+      const options: { url: string; page: number; pageSize: number; category?: string } = {
+        url: url.trim(),
+        page: pagination.pageIndex + 1,
+        pageSize: pagination.pageSize,
+      };
       if (category) {
         options.category = category;
       }
@@ -95,33 +103,17 @@ export default function AddYouTubeChannelPage() {
     }
   };
 
-  const handleSaveResults = async () => {
-    if (!preview) return;
-    setSaveStatus('saving');
-    try {
-      await saveChannelWithVideos(preview, preview.videos);
-      setSaveStatus('saved');
-    } catch {
-      setSaveStatus('error');
-    }
-  };
-
   const handleAddToKnowledge = async () => {
     if (!preview || selectedIds.size === 0) return;
     setPhase('submitting');
     setError(null);
-
-    // Auto-save channel + all scraped videos to Supabase (non-blocking)
-    saveChannelWithVideos(preview, preview.videos)
-      .then(() => setSaveStatus('saved'))
-      .catch(() => {/* save failure shouldn't block transcription */});
 
     const selectedVideoIds = Array.from(selectedIds);
 
     // Filter out already-transcribed videos
     let idsToTranscribe = selectedVideoIds;
     try {
-      const alreadyTranscribed = await getTranscribedVideoIds(selectedVideoIds);
+      const alreadyTranscribed = await channelHelpers.getTranscribedVideoIds(selectedVideoIds);
       if (alreadyTranscribed.size > 0) {
         idsToTranscribe = selectedVideoIds.filter((id) => !alreadyTranscribed.has(id));
       }
@@ -163,10 +155,10 @@ export default function AddYouTubeChannelPage() {
     const failedSet = new Set(data.failed_videos);
     const succeededIds = transcribingVideoIds.filter((id) => !failedSet.has(id));
     if (succeededIds.length > 0) {
-      markVideosTranscribed(succeededIds).catch(() => {/* best effort */});
+      channelHelpers.markVideosTranscribed(succeededIds).catch(() => {/* best effort */});
     }
     setTranscribingVideoIds([]);
-  }, [transcribingVideoIds]);
+  }, [transcribingVideoIds, channelHelpers]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handlePreview();
@@ -224,23 +216,6 @@ export default function AddYouTubeChannelPage() {
             selectedCategory={selectedCategory}
             loading={phase === 'loading' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           />
-
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={handleSaveResults}
-              disabled={saveStatus === 'saving' || saveStatus === 'saved'}
-            >
-              {saveStatus === 'saving' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {saveStatus === 'saved' ? 'Saved' : 'Save Results'}
-            </Button>
-            {saveStatus === 'saved' && (
-              <p className="text-sm text-green-600">Channel and videos saved</p>
-            )}
-            {saveStatus === 'error' && (
-              <p className="text-sm text-red-600">Failed to save</p>
-            )}
-          </div>
 
           <VideoTable
             videos={preview.videos}

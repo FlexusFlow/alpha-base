@@ -4,6 +4,7 @@ export interface DbChannel {
   channel_title: string;
   channel_url: string;
   total_videos: number;
+  last_scraped_at: string | null;
   created_at: string;
   updated_at: string;
 }

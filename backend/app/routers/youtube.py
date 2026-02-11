@@ -14,14 +14,13 @@ router = APIRouter(prefix="/v1/api/youtube", tags=["youtube"])
 async def preview_channel(
     url: str = Query(..., description="YouTube channel URL"),
     category: str = Query(None, description="Category filter"),
-    limit: int = Query(None, description="Max videos to return"),
-    skip: int = Query(None, description="Skip videos count"),
+    limit: int = Query(0, description="Max videos to return"),
+    skip: int = Query(0, description="Skip videos count"),
     settings: Settings = Depends(get_settings),
 ):
     max_count = settings.preview_video_limit
     try:
         result = await asyncio.to_thread(scrape_channel, url, category, max_count, limit, skip)
-       # TODO Save scrapping result to Supabase 
         return result
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

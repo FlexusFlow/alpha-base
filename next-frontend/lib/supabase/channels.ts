@@ -1,13 +1,9 @@
+import { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { DbCategory } from '@/lib/types/database';
 import { YTChannelPreview, YTVideo } from '@/lib/types/youtube';
 
-let categoryMapCache: Map<string, number> | null = null;
-
-async function getCategoryMap(): Promise<Map<string, number>> {
-  if (categoryMapCache) return categoryMapCache;
-
-  const supabase = createClient();
+async function getCategoryMap(supabase: SupabaseClient): Promise<Map<string, number>> {
   const { data, error } = await supabase
     .from('categories')
     .select('id, name');
@@ -18,31 +14,30 @@ async function getCategoryMap(): Promise<Map<string, number>> {
   for (const cat of data as DbCategory[]) {
     map.set(cat.name, cat.id);
   }
-  categoryMapCache = map;
   return map;
 }
 
 export async function saveChannelWithVideos(
+  supabase: SupabaseClient,
+  userId: string,
   preview: YTChannelPreview,
   videos: YTVideo[],
+  updateLastScraped = false,
 ): Promise<string> {
-  const supabase = createClient();
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) throw new Error('Not authenticated');
-
   // Upsert channel
+  const channelData: Record<string, unknown> = {
+    user_id: userId,
+    channel_title: preview.channel_title,
+    channel_url: preview.channel_url,
+    total_videos: preview.total_videos,
+  };
+  if (updateLastScraped) {
+    channelData.last_scraped_at = new Date().toISOString();
+  }
+
   const { data: channel, error: channelError } = await supabase
     .from('channels')
-    .upsert(
-      {
-        user_id: user.id,
-        channel_title: preview.channel_title,
-        channel_url: preview.channel_url,
-        total_videos: preview.total_videos,
-      },
-      { onConflict: 'user_id,channel_url' },
-    )
+    .upsert(channelData, { onConflict: 'user_id,channel_url' })
     .select('id')
     .single();
 
@@ -51,12 +46,12 @@ export async function saveChannelWithVideos(
   const channelId = channel.id as string;
 
   // Resolve category names to IDs
-  const categoryMap = await getCategoryMap();
+  const categoryMap = await getCategoryMap(supabase);
 
   // Batch upsert videos
   const videoRows = videos.map((v) => ({
     channel_id: channelId,
-    user_id: user.id,
+    user_id: userId,
     video_id: v.video_id,
     title: v.title,
     url: v.url,
@@ -78,10 +73,11 @@ export async function saveChannelWithVideos(
   return channelId;
 }
 
-export async function getTranscribedVideoIds(videoIds: string[]): Promise<Set<string>> {
+export async function getTranscribedVideoIds(
+  supabase: SupabaseClient,
+  videoIds: string[],
+): Promise<Set<string>> {
   if (videoIds.length === 0) return new Set();
-
-  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('videos')
@@ -94,10 +90,11 @@ export async function getTranscribedVideoIds(videoIds: string[]): Promise<Set<st
   return new Set((data ?? []).map((row: { video_id: string }) => row.video_id));
 }
 
-export async function markVideosTranscribed(videoIds: string[]): Promise<void> {
+export async function markVideosTranscribed(
+  supabase: SupabaseClient,
+  videoIds: string[],
+): Promise<void> {
   if (videoIds.length === 0) return;
-
-  const supabase = createClient();
 
   const { error } = await supabase
     .from('videos')
@@ -105,4 +102,18 @@ export async function markVideosTranscribed(videoIds: string[]): Promise<void> {
     .in('video_id', videoIds);
 
   if (error) throw new Error(`Failed to mark videos as transcribed: ${error.message}`);
+}
+
+// Convenience wrappers using browser client (for use in client components)
+export function createBrowserChannelHelpers() {
+  const supabase = createClient();
+
+  return {
+    async getTranscribedVideoIds(videoIds: string[]) {
+      return getTranscribedVideoIds(supabase, videoIds);
+    },
+    async markVideosTranscribed(videoIds: string[]) {
+      return markVideosTranscribed(supabase, videoIds);
+    },
+  };
 }
