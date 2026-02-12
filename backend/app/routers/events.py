@@ -22,6 +22,16 @@ async def event_stream(
     queue = job_manager.subscribe(job_id)
 
     async def generate():
+        # Send current state immediately (handles race if job finished before subscribe)
+        current = job_manager.get_job(job_id)
+        if current:
+            yield {
+                "event": "job_update",
+                "data": current.to_json(),
+            }
+            if current.status in (JobStatus.COMPLETED, JobStatus.FAILED):
+                return
+
         while True:
             try:
                 job = await asyncio.wait_for(queue.get(), timeout=30.0)

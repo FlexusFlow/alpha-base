@@ -26,9 +26,7 @@ def get_transcript_via_ytdlp(video_id: str) -> str | None:
     """Fallback: download auto-generated subtitles via yt-dlp Python API."""
     url = f"https://www.youtube.com/watch?v={video_id}"
 
-    cookie = """
-
-"""
+    cookie = ""
 
     jar = http.cookiejar.CookieJar()
     if cookie:
