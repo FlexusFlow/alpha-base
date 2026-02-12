@@ -1,4 +1,6 @@
-import io
+from urllib.request import HTTPCookieProcessor
+import http.cookiejar
+import json
 from pathlib import Path
 
 import yt_dlp
@@ -24,6 +26,38 @@ def get_transcript_via_ytdlp(video_id: str) -> str | None:
     """Fallback: download auto-generated subtitles via yt-dlp Python API."""
     url = f"https://www.youtube.com/watch?v={video_id}"
 
+    cookie = """
+
+"""
+
+    jar = http.cookiejar.CookieJar()
+    if cookie:
+        for c in json.loads(cookie):
+            expires = c.get("expires")
+            discard = expires is None or expires == -1
+            if discard:
+                expires = None
+            domain = c.get("domain", "")
+            jar.set_cookie(http.cookiejar.Cookie(
+                version=0,
+                name=c["name"],
+                value=c["value"],
+                port=None,
+                port_specified=False,
+                domain=domain,
+                domain_specified=bool(domain),
+                domain_initial_dot=domain.startswith("."),
+                path=c.get("path", "/"),
+                path_specified=True,
+                secure=c.get("secure", False),
+                expires=int(expires) if expires else None,
+                discard=discard,
+                comment=None,
+                comment_url=None,
+                rest={"HttpOnly": ""} if c.get("httpOnly") else {},
+                rfc2109=False,
+            ))
+
     ydl_opts = {
         "writeautomaticsub": True,
         "subtitleslangs": ["en"],
@@ -31,10 +65,24 @@ def get_transcript_via_ytdlp(video_id: str) -> str | None:
         "subtitlesformat": "vtt",
         "quiet": True,
         "no_warnings": True,
+
+        "nocheckcertificate": True,
+        # "extractor_args": {
+        #     "youtube": {
+        #         "player_client": ["web"]
+        #     }
+        # },
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
     }
+
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            if jar:
+                ydl.cookiejar = jar
+                ydl._opener.add_handler(HTTPCookieProcessor(jar))
             info = ydl.extract_info(url, download=False)
 
         # Get auto-generated subtitles
@@ -65,10 +113,10 @@ def get_transcript_via_ytdlp(video_id: str) -> str | None:
 def get_transcript(video_id: str, title: str) -> str:
     """Get transcript, trying youtube-transcript-api first, then yt-dlp."""
 
-    print(video_id, title)
-    text = get_transcript_via_api(video_id)
-    if text:
-        return text
+    # print(video_id, title)
+    # text = get_transcript_via_api(video_id)
+    # if text:
+    #     return text
 
     text = get_transcript_via_ytdlp(video_id)
     if text:

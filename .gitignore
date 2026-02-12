@@ -31,5 +31,7 @@ Thumbs.db
 # Plan files
 .claude/plans/
 .claude/settings.local.json
+.claude/*.md
+.claude/*.json
 
 .env.local
