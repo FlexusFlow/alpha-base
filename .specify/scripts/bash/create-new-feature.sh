@@ -3,7 +3,6 @@
 set -e
 
 JSON_MODE=false
-NO_BRANCH=false
 SHORT_NAME=""
 BRANCH_NUMBER=""
 ARGS=()
@@ -11,11 +10,8 @@ i=1
 while [ $i -le $# ]; do
     arg="${!i}"
     case "$arg" in
-        --json)
-            JSON_MODE=true
-            ;;
-        --no-branch)
-            NO_BRANCH=true
+        --json) 
+            JSON_MODE=true 
             ;;
         --short-name)
             if [ $((i + 1)) -gt $# ]; then
@@ -45,11 +41,10 @@ while [ $i -le $# ]; do
             BRANCH_NUMBER="$next_arg"
             ;;
         --help|-h) 
-            echo "Usage: $0 [--json] [--no-branch] [--short-name <name>] [--number N] <feature_description>"
+            echo "Usage: $0 [--json] [--short-name <name>] [--number N] <feature_description>"
             echo ""
             echo "Options:"
             echo "  --json              Output in JSON format"
-            echo "  --no-branch         Skip git branch creation (stay on current branch)"
             echo "  --short-name <name> Provide a custom short name (2-4 words) for the branch"
             echo "  --number N          Specify branch number manually (overrides auto-detection)"
             echo "  --help, -h          Show this help message"
@@ -68,7 +63,7 @@ done
 
 FEATURE_DESCRIPTION="${ARGS[*]}"
 if [ -z "$FEATURE_DESCRIPTION" ]; then
-    echo "Usage: $0 [--json] [--no-branch] [--short-name <name>] [--number N] <feature_description>" >&2
+    echo "Usage: $0 [--json] [--short-name <name>] [--number N] <feature_description>" >&2
     exit 1
 fi
 
@@ -94,7 +89,10 @@ get_highest_from_specs() {
         for dir in "$specs_dir"/*; do
             [ -d "$dir" ] || continue
             dirname=$(basename "$dir")
-            number=$(echo "$dirname" | grep -o '^[0-9]\+' || echo "0")
+            # Strip optional acronym prefix (e.g., "URA-" from "URA-001-name")
+            local stripped_dirname
+            stripped_dirname=$(echo "$dirname" | sed 's/^[A-Z]\{2,5\}-//')
+            number=$(echo "$stripped_dirname" | grep -o '^[0-9]\+' || echo "0")
             number=$((10#$number))
             if [ "$number" -gt "$highest" ]; then
                 highest=$number
@@ -117,9 +115,15 @@ get_highest_from_branches() {
             # Clean branch name: remove leading markers and remote prefixes
             clean_branch=$(echo "$branch" | sed 's/^[* ]*//; s|^remotes/[^/]*/||')
             
+            # Strip feature/ prefix if present
+            clean_branch="${clean_branch#feature/}"
+            # Strip optional acronym prefix (e.g., "URA-" from "URA-001-name")
+            local stripped_branch
+            stripped_branch=$(echo "$clean_branch" | sed 's/^[A-Z]\{2,5\}-//')
+
             # Extract feature number if branch matches pattern ###-*
-            if echo "$clean_branch" | grep -q '^[0-9]\{3\}-'; then
-                number=$(echo "$clean_branch" | grep -o '^[0-9]\{3\}' || echo "0")
+            if echo "$stripped_branch" | grep -q '^[0-9]\{3\}-'; then
+                number=$(echo "$stripped_branch" | grep -o '^[0-9]\{3\}' || echo "0")
                 number=$((10#$number))
                 if [ "$number" -gt "$highest" ]; then
                     highest=$number
@@ -158,6 +162,60 @@ check_existing_branches() {
 clean_branch_name() {
     local name="$1"
     echo "$name" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/-\+/-/g' | sed 's/^-//' | sed 's/-$//'
+}
+
+# Function to extract project acronym from constitution.md
+get_project_acronym() {
+    local repo_root="$1"
+    local constitution="$repo_root/.specify/memory/constitution.md"
+
+    if [ ! -f "$constitution" ]; then
+        echo ""
+        return
+    fi
+
+    # Try to extract project_acronym from YAML front matter
+    local acronym=""
+    if head -1 "$constitution" | grep -q '^---$'; then
+        acronym=$(awk '/^---$/{n++; next} n==1 && /^project_acronym:/{sub(/^project_acronym:[[:space:]]*/,""); gsub(/^["'"'"']|["'"'"']$/,""); print; exit}' "$constitution")
+    fi
+
+    # Skip if placeholder or empty
+    if [ -n "$acronym" ] && [ "$acronym" != "[PROJECT_ACRONYM]" ]; then
+        echo "$acronym"
+        return
+    fi
+
+    # Fallback: derive from H1 heading (e.g., "# Upwork Routine Automation Constitution")
+    local heading
+    heading=$(grep -m1 '^# ' "$constitution" | sed 's/^# //')
+    if [ -z "$heading" ]; then
+        echo ""
+        return
+    fi
+
+    # Skip if heading is still a placeholder
+    if echo "$heading" | grep -q '\[PROJECT_NAME\]'; then
+        echo ""
+        return
+    fi
+
+    # Remove trailing "Constitution" if present
+    heading=$(echo "$heading" | sed 's/[[:space:]]*Constitution[[:space:]]*$//')
+
+    # Count words
+    local word_count
+    word_count=$(echo "$heading" | wc -w | tr -d ' ')
+
+    if [ "$word_count" -eq 1 ]; then
+        # Single word: first 3 letters uppercased
+        echo "$heading" | tr '[:lower:]' '[:upper:]' | cut -c1-3
+    elif [ "$word_count" -ge 2 ]; then
+        # Multiple words: first letter of each word
+        echo "$heading" | tr '[:lower:]' '[:upper:]' | sed 's/[[:space:]]\+/ /g' | sed 's/\([A-Z]\)[^ ]*/\1/g' | tr -d ' '
+    else
+        echo ""
+    fi
 }
 
 # Resolve repository root. Prefer git information when available, but fall back
@@ -253,38 +311,83 @@ fi
 
 # Force base-10 interpretation to prevent octal conversion (e.g., 010 → 8 in octal, but should be 10 in decimal)
 FEATURE_NUM=$(printf "%03d" "$((10#$BRANCH_NUMBER))")
-BRANCH_NAME="${FEATURE_NUM}-${BRANCH_SUFFIX}"
+
+# Get project acronym from constitution
+PROJECT_ACRONYM=$(get_project_acronym "$REPO_ROOT")
+
+# If no acronym found, ask the user
+if [ -z "$PROJECT_ACRONYM" ]; then
+    CONSTITUTION_FILE="$REPO_ROOT/.specify/memory/constitution.md"
+    >&2 echo ""
+    >&2 printf "[specify] Enter PROJECT_ACRONYM (2-5 uppercase letters, or press Enter to skip): "
+    read -r user_acronym || user_acronym=""
+    # Uppercase and trim
+    user_acronym=$(echo "$user_acronym" | tr '[:lower:]' '[:upper:]' | tr -d '[:space:]')
+    if [[ "$user_acronym" =~ ^[A-Z]{2,5}$ ]]; then
+        PROJECT_ACRONYM="$user_acronym"
+        # Persist to constitution if file exists
+        if [ -f "$CONSTITUTION_FILE" ]; then
+            if head -1 "$CONSTITUTION_FILE" | grep -q '^---$'; then
+                if grep -q '^project_acronym:' "$CONSTITUTION_FILE"; then
+                    sed -i.bak "s/^project_acronym:.*$/project_acronym: \"$PROJECT_ACRONYM\"/" "$CONSTITUTION_FILE"
+                    rm -f "$CONSTITUTION_FILE.bak"
+                else
+                    sed -i.bak "1a\\
+project_acronym: \"$PROJECT_ACRONYM\"" "$CONSTITUTION_FILE"
+                    rm -f "$CONSTITUTION_FILE.bak"
+                fi
+                >&2 echo "[specify] Saved PROJECT_ACRONYM=$PROJECT_ACRONYM to constitution."
+            fi
+        fi
+    elif [ -n "$user_acronym" ]; then
+        >&2 echo "[specify] Invalid acronym (must be 2-5 uppercase letters). Skipping."
+    fi
+fi
+
+if [ -n "$PROJECT_ACRONYM" ]; then
+    BRANCH_NAME="feature/${PROJECT_ACRONYM}-${FEATURE_NUM}-${BRANCH_SUFFIX}"
+else
+    BRANCH_NAME="feature/${FEATURE_NUM}-${BRANCH_SUFFIX}"
+fi
 
 # GitHub enforces a 244-byte limit on branch names
 # Validate and truncate if necessary
 MAX_BRANCH_LENGTH=244
 if [ ${#BRANCH_NAME} -gt $MAX_BRANCH_LENGTH ]; then
-    # Calculate how much we need to trim from suffix
-    # Account for: feature number (3) + hyphen (1) = 4 chars
-    MAX_SUFFIX_LENGTH=$((MAX_BRANCH_LENGTH - 4))
-    
+    # Calculate prefix length: "feature/" (8) + optional acronym + hyphen + feature number (3) + hyphen (1)
+    if [ -n "$PROJECT_ACRONYM" ]; then
+        PREFIX_LENGTH=$((8 + ${#PROJECT_ACRONYM} + 1 + 3 + 1))
+    else
+        PREFIX_LENGTH=$((8 + 3 + 1))
+    fi
+    MAX_SUFFIX_LENGTH=$((MAX_BRANCH_LENGTH - PREFIX_LENGTH))
+
     # Truncate suffix at word boundary if possible
     TRUNCATED_SUFFIX=$(echo "$BRANCH_SUFFIX" | cut -c1-$MAX_SUFFIX_LENGTH)
     # Remove trailing hyphen if truncation created one
     TRUNCATED_SUFFIX=$(echo "$TRUNCATED_SUFFIX" | sed 's/-$//')
-    
+
     ORIGINAL_BRANCH_NAME="$BRANCH_NAME"
-    BRANCH_NAME="${FEATURE_NUM}-${TRUNCATED_SUFFIX}"
-    
+    if [ -n "$PROJECT_ACRONYM" ]; then
+        BRANCH_NAME="feature/${PROJECT_ACRONYM}-${FEATURE_NUM}-${TRUNCATED_SUFFIX}"
+    else
+        BRANCH_NAME="feature/${FEATURE_NUM}-${TRUNCATED_SUFFIX}"
+    fi
+
     >&2 echo "[specify] Warning: Branch name exceeded GitHub's 244-byte limit"
     >&2 echo "[specify] Original: $ORIGINAL_BRANCH_NAME (${#ORIGINAL_BRANCH_NAME} bytes)"
     >&2 echo "[specify] Truncated to: $BRANCH_NAME (${#BRANCH_NAME} bytes)"
 fi
 
-if [ "$NO_BRANCH" = true ]; then
-    >&2 echo "[specify] Skipping branch creation (--no-branch)"
-elif [ "$HAS_GIT" = true ]; then
+if [ "$HAS_GIT" = true ]; then
     git checkout -b "$BRANCH_NAME"
 else
     >&2 echo "[specify] Warning: Git repository not detected; skipped branch creation for $BRANCH_NAME"
 fi
 
-FEATURE_DIR="$SPECS_DIR/$BRANCH_NAME"
+# Strip feature/ prefix for spec directory name (avoids specs/feature/ nesting)
+SPEC_DIR_NAME="${BRANCH_NAME#feature/}"
+FEATURE_DIR="$SPECS_DIR/$SPEC_DIR_NAME"
 mkdir -p "$FEATURE_DIR"
 
 TEMPLATE="$REPO_ROOT/.specify/templates/spec-template.md"
@@ -295,10 +398,11 @@ if [ -f "$TEMPLATE" ]; then cp "$TEMPLATE" "$SPEC_FILE"; else touch "$SPEC_FILE"
 export SPECIFY_FEATURE="$BRANCH_NAME"
 
 if $JSON_MODE; then
-    printf '{"BRANCH_NAME":"%s","SPEC_FILE":"%s","FEATURE_NUM":"%s"}\n' "$BRANCH_NAME" "$SPEC_FILE" "$FEATURE_NUM"
+    printf '{"BRANCH_NAME":"%s","SPEC_FILE":"%s","FEATURE_NUM":"%s","PROJECT_ACRONYM":"%s"}\n' "$BRANCH_NAME" "$SPEC_FILE" "$FEATURE_NUM" "$PROJECT_ACRONYM"
 else
     echo "BRANCH_NAME: $BRANCH_NAME"
     echo "SPEC_FILE: $SPEC_FILE"
     echo "FEATURE_NUM: $FEATURE_NUM"
+    echo "PROJECT_ACRONYM: $PROJECT_ACRONYM"
     echo "SPECIFY_FEATURE environment variable set to: $BRANCH_NAME"
 fi

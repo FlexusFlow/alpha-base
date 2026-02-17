@@ -1,6 +1,5 @@
 ---
-description: Execute the implementation plan by processing and executing all tasks defined in tasks.md
----
+description: Execute the implementation plan by processing and executing all tasks defined in tasks.md---
 
 ## User Input
 
@@ -131,24 +130,5 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Validate that tests pass and coverage meets requirements
    - Confirm the implementation follows the technical plan
    - Report final status with summary of completed work
-
-10. **Update implemented features registry**:
-    - Only run this step when **all tasks completed successfully** (no failures)
-    - Read `.specify/memory/implemented-features.md`
-    - Read the feature's `spec.md` to extract the feature name and user stories
-    - Find the highest existing `AB-XXXX` number in the file
-    - Append a new section to the file under the appropriate stage heading, or create a new heading if needed
-    - Use found number in the section name. Section name contains feature prefix like AB-0072
-    - Format: each feature as a bullet with a feature prefix and short description
-    - do not incremenet feature prefix in bullet list, use same feature prefix for all bullet items
-    - Include the spec directory name for traceability (e.g., `(spec: 001-feature-name)`)
-    - Example entry (if last existing is AB-0071):
-      ```
-      ## Stage 7: Delete Scraped Channels (AB-0072)
-      - AB-0072 Channel deletion — Users can delete scraped channels and all associated videos from the database (spec: 002-channel-deletion)
-      - AB-0072 Transcription-aware deletion — Confirmation dialog shows transcribed video count, deletes DeepLake vector entries and transcript markdown files, active job conflict detection (409)
-      - AB-0072 Bulk channel deletion — Selection mode with checkbox overlays, floating action bar, bulk delete endpoint with partial failure handling, summary toast
-      ```
-    - If implementation was partial (some tasks failed), skip this step and note it in the completion report
 
 Note: This command assumes a complete task breakdown exists in tasks.md. If tasks are incomplete or missing, suggest running `/speckit.tasks` first to regenerate the task list.

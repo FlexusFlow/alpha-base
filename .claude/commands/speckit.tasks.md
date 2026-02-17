@@ -8,8 +8,7 @@ handoffs:
   - label: Implement Project
     agent: speckit.implement
     prompt: Start the implementation in phases
-    send: true
----
+    send: true---
 
 ## User Input
 

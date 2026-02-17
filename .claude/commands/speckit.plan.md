@@ -7,8 +7,7 @@ handoffs:
     send: true
   - label: Create Checklist
     agent: speckit.checklist
-    prompt: Create a checklist for the following domain...
----
+    prompt: Create a checklist for the following domain...---
 
 ## User Input
 

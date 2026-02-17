@@ -3,8 +3,7 @@ description: Create or update the project constitution from interactive or provi
 handoffs: 
   - label: Build Specification
     agent: speckit.specify
-    prompt: Implement the feature specification based on the updated constitution. I want to build...
----
+    prompt: Implement the feature specification based on the updated constitution. I want to build...---
 
 ## User Input
 
@@ -29,6 +28,12 @@ Follow this execution flow:
 2. Collect/derive values for placeholders:
    - If user input (conversation) supplies a value, use it.
    - Otherwise infer from existing repo context (README, docs, prior constitution versions if embedded).
+   - `PROJECT_ACRONYM` derivation rules:
+     - If the user explicitly provides an acronym, use it.
+     - Otherwise derive from `PROJECT_NAME`: take the first letter of each word, uppercased (e.g., "Upwork Routine Automation" → "URA").
+     - If `PROJECT_NAME` is a single word, use the first 3 letters uppercased (e.g., "Taskify" → "TAS").
+     - The acronym must be 2-5 uppercase characters (`[A-Z]{2,5}`).
+     - **IMPORTANT**: The YAML front matter `---` delimiters in the constitution file must be preserved exactly. The `project_name` and `project_acronym` fields live inside the YAML front matter block at the top of the file.
    - For governance dates: `RATIFICATION_DATE` is the original adoption date (if unknown ask or mark TODO), `LAST_AMENDED_DATE` is today if changes are made, otherwise keep previous.
    - `CONSTITUTION_VERSION` must increment according to semantic versioning rules:
      - MAJOR: Backward incompatible governance/principle removals or redefinitions.

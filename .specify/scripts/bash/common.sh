@@ -37,7 +37,10 @@ get_current_branch() {
         for dir in "$specs_dir"/*; do
             if [[ -d "$dir" ]]; then
                 local dirname=$(basename "$dir")
-                if [[ "$dirname" =~ ^([0-9]{3})- ]]; then
+                # Match both "001-name" and "ACR-001-name" directory patterns
+                local stripped_dirname
+                stripped_dirname=$(echo "$dirname" | sed 's/^[A-Z]\{2,5\}-//')
+                if [[ "$stripped_dirname" =~ ^([0-9]{3})- ]]; then
                     local number=${BASH_REMATCH[1]}
                     number=$((10#$number))
                     if [[ "$number" -gt "$highest" ]]; then
@@ -72,16 +75,16 @@ check_feature_branch() {
         return 0
     fi
 
-    if [[ ! "$branch" =~ ^[0-9]{3}- ]]; then
+    if [[ ! "$branch" =~ ^(feature/([A-Z]+-)?)?[0-9]{3}- ]]; then
         echo "ERROR: Not on a feature branch. Current branch: $branch" >&2
-        echo "Feature branches should be named like: 001-feature-name" >&2
+        echo "Feature branches should be named like: feature/001-feature-name or feature/URA-001-feature-name" >&2
         return 1
     fi
 
     return 0
 }
 
-get_feature_dir() { echo "$1/specs/$2"; }
+get_feature_dir() { local dir="${2#feature/}"; echo "$1/specs/$dir"; }
 
 # Find feature directory by numeric prefix instead of exact branch match
 # This allows multiple branches to work on the same spec (e.g., 004-fix-bug, 004-add-feature)
@@ -90,29 +93,41 @@ find_feature_dir_by_prefix() {
     local branch_name="$2"
     local specs_dir="$repo_root/specs"
 
-    # Extract numeric prefix from branch (e.g., "004" from "004-whatever")
-    if [[ ! "$branch_name" =~ ^([0-9]{3})- ]]; then
+    # Strip feature/ prefix for directory lookup
+    local dir_name="${branch_name#feature/}"
+
+    # Extract numeric prefix from branch (e.g., "004" from "004-whatever" or "URA-004-whatever")
+    local stripped_name
+    stripped_name=$(echo "$dir_name" | sed 's/^[A-Z]\{2,5\}-//')
+    if [[ ! "$stripped_name" =~ ^([0-9]{3})- ]]; then
         # If branch doesn't have numeric prefix, fall back to exact match
-        echo "$specs_dir/$branch_name"
+        echo "$specs_dir/$dir_name"
         return
     fi
 
     local prefix="${BASH_REMATCH[1]}"
 
-    # Search for directories in specs/ that start with this prefix
+    # Search for directories in specs/ that match this numeric prefix
+    # Match both "001-name" and "ACR-001-name" patterns
     local matches=()
     if [[ -d "$specs_dir" ]]; then
-        for dir in "$specs_dir"/"$prefix"-*; do
+        for dir in "$specs_dir"/*; do
             if [[ -d "$dir" ]]; then
-                matches+=("$(basename "$dir")")
+                local base
+                base=$(basename "$dir")
+                local base_stripped
+                base_stripped=$(echo "$base" | sed 's/^[A-Z]\{2,5\}-//')
+                if [[ "$base_stripped" =~ ^${prefix}- ]]; then
+                    matches+=("$base")
+                fi
             fi
         done
     fi
 
     # Handle results
     if [[ ${#matches[@]} -eq 0 ]]; then
-        # No match found - return the branch name path (will fail later with clear error)
-        echo "$specs_dir/$branch_name"
+        # No match found - return the dir name path (will fail later with clear error)
+        echo "$specs_dir/$dir_name"
     elif [[ ${#matches[@]} -eq 1 ]]; then
         # Exactly one match - perfect!
         echo "$specs_dir/${matches[0]}"
@@ -120,7 +135,7 @@ find_feature_dir_by_prefix() {
         # Multiple matches - this shouldn't happen with proper naming convention
         echo "ERROR: Multiple spec directories found with prefix '$prefix': ${matches[*]}" >&2
         echo "Please ensure only one spec directory exists per numeric prefix." >&2
-        echo "$specs_dir/$branch_name"  # Return something to avoid breaking the script
+        echo "$specs_dir/$dir_name"  # Return something to avoid breaking the script
     fi
 }
 
