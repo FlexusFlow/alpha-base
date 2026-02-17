@@ -22,12 +22,12 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Create TypeScript type definitions for UserCookie and CookieEntry in `next-frontend/lib/types/cookies.ts`
+- [x] T001 Create TypeScript type definitions for UserCookie and CookieEntry in `next-frontend/lib/types/cookies.ts`
   - `UserCookie` interface: id (string), user_id (string), domain (string), filename (string), file_path (string), earliest_expiry (string | null), created_at (string)
   - `CookieEntry` interface: name, value, domain, path (all string), expires (number, optional), httpOnly (boolean, optional), secure (boolean, optional), sameSite ('Strict' | 'Lax' | 'None', optional)
   - Reference: [data-model.md](./data-model.md)
 
-- [ ] T002 Create cookie utility functions in `next-frontend/lib/cookies.ts`
+- [x] T002 Create cookie utility functions in `next-frontend/lib/cookies.ts`
   - `extractDomainFromFilename(filename: string): string | null` — extracts domain from `<domain>.cookies.json` pattern, returns null if no match
   - `normalizeDomain(domain: string): string` — lowercases and strips `www.` prefix
   - `getEarliestExpiry(cookies: CookieEntry[]): string | null` — finds minimum `expires` timestamp from cookie entries, returns ISO string or null
@@ -37,13 +37,13 @@
 
 ## Phase 2: Foundational
 
-- [ ] T003 Create Supabase `user_cookies` table and RLS policies
+- [x] T003 Create Supabase `user_cookies` table and RLS policies
   - Run the SQL from [quickstart.md](./quickstart.md) "Database Setup" section in Supabase SQL Editor
   - Table: `user_cookies` with columns: id (UUID PK), user_id (UUID FK), domain (TEXT), filename (TEXT), file_path (TEXT), earliest_expiry (TIMESTAMPTZ nullable), created_at (TIMESTAMPTZ)
   - UNIQUE constraint on (user_id, domain)
   - RLS policies for SELECT, INSERT, DELETE scoped to `auth.uid() = user_id`
 
-- [ ] T004 Create Supabase Storage bucket `cookie-files` with access policies
+- [x] T004 Create Supabase Storage bucket `cookie-files` with access policies
   - Create private bucket `cookie-files` in Supabase Dashboard > Storage
   - Run storage policies SQL from [quickstart.md](./quickstart.md) "Storage Setup" section
   - Policies for INSERT, SELECT, DELETE scoped to user's folder `auth.uid()::text = (storage.foldername(name))[1]`
@@ -56,7 +56,7 @@
 
 **Independent test**: Upload a valid `.cookies.json` file → verify row appears in `user_cookies` table and file exists in `cookie-files` bucket. Upload for same domain → verify old entry replaced. Upload 51st cookie → verify 409 error.
 
-- [ ] T005 [US1] Create the cookie API route handler in `next-frontend/app/api/cookies/route.ts`
+- [x] T005 [US1] Create the cookie API route handler in `next-frontend/app/api/cookies/route.ts`
   - Implement `POST` handler (multipart/form-data):
     1. Authenticate user via `createClient()` from `@/lib/supabase/server`
     2. Extract file from `request.formData()`
@@ -74,7 +74,7 @@
   - Error responses per [contracts/cookies-api.yaml](./contracts/cookies-api.yaml): 400, 401, 404, 409, 500
   - Reference: [contracts/cookies-api.yaml](./contracts/cookies-api.yaml), [research.md](./research.md) Decision 2 & 5
 
-- [ ] T006 [P] [US1] Create the cookie management component in `next-frontend/components/cookie-management.tsx`
+- [x] T006 [P] [US1] Create the cookie management component in `next-frontend/components/cookie-management.tsx`
   - **Upload form section**:
     - File input (`<input type="file" accept=".json">`) with a styled button (shadcn `Button`)
     - On file select: POST to `/api/cookies` with FormData
@@ -93,7 +93,7 @@
   - Use `useState` for cookies list, `useEffect` to fetch on mount via GET `/api/cookies`
   - Reference: [research.md](./research.md) Decision 6, [spec.md](./spec.md) US1/US2/US3 acceptance scenarios
 
-- [ ] T007 [P] [US1] Create the cookies dashboard page in `next-frontend/app/dashboard/cookies/page.tsx`
+- [x] T007 [P] [US1] Create the cookies dashboard page in `next-frontend/app/dashboard/cookies/page.tsx`
   - Import and render `CookieManagement` component
   - Page title/heading: "Cookies" or "Cookie Management"
   - Follow existing dashboard page patterns (check other pages in `app/dashboard/` for layout conventions)
@@ -106,7 +106,7 @@
 
 **Independent test**: With pre-existing cookies in the database, navigate to `/dashboard/cookies` → verify table shows all entries with correct data.
 
-- [ ] T008 [US2] Verify cookie list display and empty state in `next-frontend/components/cookie-management.tsx`
+- [x] T008 [US2] Verify cookie list display and empty state in `next-frontend/components/cookie-management.tsx`
   - This is covered by T006 implementation. Verify:
     - GET `/api/cookies` is called on mount and populates the table
     - All columns render correctly (domain, filename, formatted date, status badge)
@@ -122,7 +122,7 @@
 
 **Independent test**: Upload a cookie, click delete → verify row disappears, success toast shown, file removed from storage, DB row deleted.
 
-- [ ] T009 [US3] Verify delete flow end-to-end in `next-frontend/components/cookie-management.tsx` and `next-frontend/app/api/cookies/route.ts`
+- [x] T009 [US3] Verify delete flow end-to-end in `next-frontend/components/cookie-management.tsx` and `next-frontend/app/api/cookies/route.ts`
   - This is covered by T005 (DELETE handler) and T006 (delete button). Verify:
     - Delete button calls DELETE `/api/cookies?id={id}`
     - On success: row removed from state immediately, success toast shown
@@ -138,7 +138,7 @@
 
 **Independent test**: Click "Cookies" in sidebar → navigated to `/dashboard/cookies`. Active state highlighted when on that page.
 
-- [ ] T010 [US4] Add "Cookies" navigation item to `next-frontend/components/app-sidebar.tsx`
+- [x] T010 [US4] Add "Cookies" navigation item to `next-frontend/components/app-sidebar.tsx`
   - Add a new nav item with:
     - Icon: `Cookie` from `lucide-react`
     - Label: "Cookies"
@@ -151,14 +151,14 @@
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T011 [P] Create cookie warning modal component in `next-frontend/components/cookie-warning-modal.tsx`
+- [x] T011 [P] Create cookie warning modal component in `next-frontend/components/cookie-warning-modal.tsx`
   - Use shadcn `AlertDialog` (not Dialog — see [research.md](./research.md) Decision 4)
   - Content: Security warning that cookie files contain sensitive authentication tokens
   - Props: `open`, `onOpenChange`, `onConfirm`
   - Not wired to any consumer in this feature (per spec assumptions) — ready for future scraping flow
   - Reference: [spec.md](./spec.md) Assumptions
 
-- [ ] T012 Verify build and full integration
+- [x] T012 Verify build and full integration
   - Run `cd next-frontend && yarn build` — must pass with no errors
   - Walk through all [quickstart.md](./quickstart.md) verification steps:
     1. Page loads at `/dashboard/cookies` with upload form and empty table
