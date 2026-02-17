@@ -1,0 +1,201 @@
+openapi: 3.0.3
+info:
+  title: Cookie Management API
+  description: Next.js API routes for cookie file CRUD operations
+  version: 1.0.0
+
+paths:
+  /api/cookies:
+    get:
+      summary: List user's cookies
+      description: Returns all cookie metadata for the authenticated user
+      security:
+        - supabaseAuth: []
+      responses:
+        '200':
+          description: List of cookies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cookies:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserCookie'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    post:
+      summary: Upload a cookie file
+      description: |
+        Uploads a cookie JSON file. Extracts domain from filename,
+        normalizes it (strips www.), parses expiration from file content,
+        stores file in Supabase storage, and creates a database record.
+        If a cookie for the same domain already exists, it is replaced.
+        Rejects upload if user already has 50 cookies.
+      security:
+        - supabaseAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Cookie JSON file (must match {domain}.cookies.json pattern)
+      responses:
+        '200':
+          description: Cookie uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cookie:
+                    $ref: '#/components/schemas/UserCookie'
+        '400':
+          description: Invalid file or filename
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                noFile:
+                  value:
+                    error: "No file provided"
+                invalidName:
+                  value:
+                    error: "Invalid filename. Expected format: {domain}.cookies.json"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Cookie limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Maximum cookie files reached. Please review and remove unnecessary cookies to upload new ones."
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    delete:
+      summary: Delete a cookie
+      description: |
+        Deletes a cookie file from storage and removes the database record.
+        Only the owning user can delete their own cookies.
+      security:
+        - supabaseAuth: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The cookie record ID to delete
+      responses:
+        '200':
+          description: Cookie deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '400':
+          description: Missing cookie ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Missing cookie id"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Cookie not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Cookie not found"
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  securitySchemes:
+    supabaseAuth:
+      type: http
+      scheme: bearer
+      description: Supabase session cookie (handled automatically by server-side Supabase client)
+
+  schemas:
+    UserCookie:
+      type: object
+      required:
+        - id
+        - user_id
+        - domain
+        - filename
+        - file_path
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        domain:
+          type: string
+          example: "youtube.com"
+        filename:
+          type: string
+          example: "youtube.com.cookies.json"
+        file_path:
+          type: string
+          example: "user-uuid/youtube.com.cookies.json"
+        earliest_expiry:
+          type: string
+          format: date-time
+          nullable: true
+          description: Earliest cookie expiration timestamp. Null if no expiry data.
+        created_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+
+  responses:
+    Unauthorized:
+      description: Not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Unauthorized"
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
