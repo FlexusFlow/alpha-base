@@ -61,11 +61,11 @@ class VectorStoreService:
         db.delete(ids=list(matching_ids))
         return len(matching_ids)
 
-    def similarity_search(self, query: str, k: int = 5) -> list:
+    async def similarity_search(self, query: str, k: int = 5) -> list:
         """Search the vector store for documents similar to the query."""
         db = DeeplakeVectorStore(
             dataset_path=self.deeplake_path,
             embedding_function=self.embeddings,
             read_only=True,
         )
-        return db.similarity_search(query=query, k=k)
+        return await db.asimilarity_search(query=query, k=k)

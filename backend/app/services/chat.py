@@ -1,4 +1,3 @@
-import asyncio
 from collections.abc import AsyncGenerator
 
 from langchain_openai import ChatOpenAI
@@ -28,9 +27,9 @@ class ChatService:
             streaming=True,
         )
 
-    def _retrieve_context(self, query: str) -> tuple[str, list[str]]:
+    async def _retrieve_context(self, query: str) -> tuple[str, list[str]]:
         """Retrieve relevant context from the vector store."""
-        docs = self.vectorstore.similarity_search(
+        docs = await self.vectorstore.similarity_search(
             query=query, k=self.settings.rag_retrieval_k
         )
 
@@ -71,9 +70,7 @@ class ChatService:
         self, message: str, history: list[ChatMessage]
     ) -> AsyncGenerator[dict, None]:
         """Stream the RAG response. Yields dicts with 'token' or 'done' keys."""
-        context, sources = await asyncio.to_thread(
-            self._retrieve_context, message
-        )
+        context, sources = await self._retrieve_context(message)
         messages = self._build_messages(context, history, message)
 
         full_response = ""
