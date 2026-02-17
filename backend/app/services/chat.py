@@ -28,21 +28,25 @@ class ChatService:
         )
 
     async def _retrieve_context(self, query: str) -> tuple[str, list[str]]:
-        """Retrieve relevant context from the vector store."""
-        docs = await self.vectorstore.similarity_search(
-            query=query, k=self.settings.rag_retrieval_k
+        """Retrieve relevant context from the vector store with score filtering."""
+        results = await self.vectorstore.similarity_search(
+            query=query,
+            k=self.settings.rag_retrieval_k,
+            score_threshold=self.settings.rag_score_threshold,
         )
 
-        if not docs:
+        if not results:
             return "No relevant context found.", []
 
         context_parts = []
         sources = []
-        for i, doc in enumerate(docs):
+        for i, (doc, score) in enumerate(results):
             meta = doc.metadata or {}
             title = meta.get("title", "Unknown")
             source_url = meta.get("source", "")
-            context_parts.append(f"[Source {i + 1}: {title}]\n{doc.page_content}")
+            context_parts.append(
+                f"[Source {i + 1}: {title} (relevance: {score:.2f})]\n{doc.page_content}"
+            )
             if source_url and source_url not in sources:
                 sources.append(source_url)
 

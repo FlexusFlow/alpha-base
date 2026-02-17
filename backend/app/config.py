@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     chat_model: str = "gpt-4o"
     chat_max_tokens: int = 2048
     rag_retrieval_k: int = 5
+    rag_score_threshold: float = 0.3
 
     model_config = SettingsConfigDict(
         env_file=".env",
