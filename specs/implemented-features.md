@@ -86,7 +86,7 @@
 
 ## Bugfixes (pre-SDD)
 
-- AB-0064 Next.js hydration error fixes — Wrapped useSearchParams() in Suspense boundaries, moved await params inside Suspense on project chat page, replaced <Link> wrapper with onClick + router.push on channel cards to eliminate nested <a> tags (commit c924954)
+- AB-0064 Next.js hydration error fixes — Wrapped useSearchParams() in Suspense boundaries, moved await params inside Suspense on project chat page, replaced `<Link>` wrapper with onClick + router.push on channel cards to eliminate nested `<a>` tags (commit c924954)
 - AB-0065 Stale closure fix in job-notification — Stabilized onComplete ref in job-notification component to avoid stale closures (commit e92b924)
 
 ## Infrastructure & Architecture
@@ -106,6 +106,19 @@
 - AB-0072 Delete cleanup services — VectorStoreService.delete_by_video_ids (TQL metadata query + delete), delete_transcripts (file cleanup by sanitized title)
 - AB-0072 Delete BFF proxy routes — Next.js API routes for single DELETE and bulk POST, forwarding authenticated requests to Python backend
 - AB-0072 Delete polish — Loading spinner on delete button, 404 graceful handling (already-deleted channels), empty channel list guard for selection mode
+
+## Stage 8: Cookie Management (ZIP-001)
+
+- ZIP-001 Cookie file upload — File picker for uploading `{domain}.cookies.json` files to Supabase Storage, with filename validation, 1 MB size limit, domain normalization (www. stripping), and same-domain replacement semantics
+- ZIP-001 Cookie metadata persistence — `user_cookies` table (id, user_id, domain, filename, file_path, earliest_expiry, created_at) with UNIQUE(user_id, domain) constraint and Row Level Security policies for SELECT/INSERT/DELETE
+- ZIP-001 Cookie file storage — Private `cookie-files` Supabase Storage bucket with user-scoped access policies (`{user_id}/{filename}` path structure)
+- ZIP-001 Cookie listing & status — Table view showing domain, filename, upload date, and expiration status badges (Active/Expired/Unknown) based on earliest cookie expiry extracted from file content
+- ZIP-001 Cookie deletion — Per-row delete button removing both storage file and database record with toast feedback
+- ZIP-001 Cookie API routes — Next.js API routes (GET/POST/DELETE /api/cookies) handling authentication, validation, 50-cookie-per-user limit, and Supabase Storage + DB operations
+- ZIP-001 Cookie warning modal — AlertDialog component warning about sensitive authentication tokens (prepared for future scraping flow integration)
+- ZIP-001 Dashboard integration — /dashboard/cookies page with CookieManagement component, sidebar navigation entry with Cookie icon
+- ZIP-001 Utility functions — Domain extraction from filenames, domain normalization, earliest expiry calculation from cookie entries
+- ZIP-001 Constitution alignment — Fixed Tailwind v4→v3 and npm→yarn drift in speckit constitution
 
 ## Planned (Not Yet Implemented)
 
