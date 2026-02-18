@@ -59,9 +59,6 @@ def get_transcript_via_ytdlp(video_id: str, cookie: str | None = None) -> str | 
         "quiet": True,
         "no_warnings": True,
         "nocheckcertificate": True,
-        "http_headers": {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        },
     }
 
     if cookie_file_path:
