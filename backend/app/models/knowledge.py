@@ -19,6 +19,7 @@ class KnowledgeAddRequest(BaseModel):
     channel_title: str
     channel_id: str = ""
     videos: list[VideoSelection]
+    user_id: str
 
 
 class KnowledgeAddResponse(BaseModel):

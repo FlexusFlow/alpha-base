@@ -1,6 +1,5 @@
-from urllib.request import HTTPCookieProcessor
-import http.cookiejar
 import json
+import tempfile
 from pathlib import Path
 
 import yt_dlp
@@ -22,39 +21,35 @@ def get_transcript_via_api(video_id: str) -> str | None:
         return None
 
 
-def get_transcript_via_ytdlp(video_id: str) -> str | None:
+def get_transcript_via_ytdlp(video_id: str, cookie: str | None = None) -> str | None:
     """Fallback: download auto-generated subtitles via yt-dlp Python API."""
     url = f"https://www.youtube.com/watch?v={video_id}"
 
-    cookie = ""
+    cookie = cookie or ""
 
-    jar = http.cookiejar.CookieJar()
+    # Write cookies to a Netscape-format temp file for yt-dlp
+    cookie_file_path = None
     if cookie:
-        for c in json.loads(cookie):
-            expires = c.get("expires")
-            discard = expires is None or expires == -1
-            if discard:
-                expires = None
-            domain = c.get("domain", "")
-            jar.set_cookie(http.cookiejar.Cookie(
-                version=0,
-                name=c["name"],
-                value=c["value"],
-                port=None,
-                port_specified=False,
-                domain=domain,
-                domain_specified=bool(domain),
-                domain_initial_dot=domain.startswith("."),
-                path=c.get("path", "/"),
-                path_specified=True,
-                secure=c.get("secure", False),
-                expires=int(expires) if expires else None,
-                discard=discard,
-                comment=None,
-                comment_url=None,
-                rest={"HttpOnly": ""} if c.get("httpOnly") else {},
-                rfc2109=False,
-            ))
+        cookies_list = json.loads(cookie)
+        if cookies_list:
+            cookie_file = tempfile.NamedTemporaryFile(
+                mode="w", suffix=".txt", delete=False
+            )
+            cookie_file_path = cookie_file.name
+            cookie_file.write("# Netscape HTTP Cookie File\n")
+            for c in cookies_list:
+                domain = c.get("domain", "")
+                flag = "TRUE" if domain.startswith(".") else "FALSE"
+                path = c.get("path", "/")
+                secure = "TRUE" if c.get("secure", False) else "FALSE"
+                expires = c.get("expires")
+                expires_str = str(int(expires)) if expires and expires != -1 else "0"
+                name = c["name"]
+                value = c["value"]
+                cookie_file.write(
+                    f"{domain}\t{flag}\t{path}\t{secure}\t{expires_str}\t{name}\t{value}\n"
+                )
+            cookie_file.close()
 
     ydl_opts = {
         "writeautomaticsub": True,
@@ -63,24 +58,17 @@ def get_transcript_via_ytdlp(video_id: str) -> str | None:
         "subtitlesformat": "vtt",
         "quiet": True,
         "no_warnings": True,
-
         "nocheckcertificate": True,
-        # "extractor_args": {
-        #     "youtube": {
-        #         "player_client": ["web"]
-        #     }
-        # },
         "http_headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
+        },
     }
 
+    if cookie_file_path:
+        ydl_opts["cookiefile"] = cookie_file_path
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            if jar:
-                ydl.cookiejar = jar
-                ydl._opener.add_handler(HTTPCookieProcessor(jar))
             info = ydl.extract_info(url, download=False)
 
         # Get auto-generated subtitles
@@ -106,9 +94,12 @@ def get_transcript_via_ytdlp(video_id: str) -> str | None:
 
     except Exception:
         return None
+    finally:
+        if cookie_file_path:
+            Path(cookie_file_path).unlink(missing_ok=True)
 
 
-def get_transcript(video_id: str, title: str) -> str:
+def get_transcript(video_id: str, title: str, cookie: str | None = None) -> str:
     """Get transcript, trying youtube-transcript-api first, then yt-dlp."""
 
     # print(video_id, title)
@@ -116,7 +107,7 @@ def get_transcript(video_id: str, title: str) -> str:
     # if text:
     #     return text
 
-    text = get_transcript_via_ytdlp(video_id)
+    text = get_transcript_via_ytdlp(video_id, cookie=cookie)
     if text:
         return text
 

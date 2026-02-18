@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { previewChannel } from '@/lib/api/youtube';
 import { addToKnowledge } from '@/lib/api/knowledge';
+import { createClient } from '@/lib/supabase/client';
 import { ChannelInfo } from '@/components/youtube/channel-info';
 import { VideoTable } from '@/components/youtube/video-table';
 import { JobNotification } from '@/components/youtube/job-notification';
@@ -125,6 +126,14 @@ function AddYouTubeChannelContent() {
     setPhase('submitting');
     setError(null);
 
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setError('You must be logged in to add videos to the knowledge base');
+      setPhase('ready');
+      return;
+    }
+
     const idsToTranscribe = Array.from(selectedIds);
 
     const videosToProcess = preview.videos
@@ -135,6 +144,7 @@ function AddYouTubeChannelContent() {
       const response = await addToKnowledge({
         channel_title: preview.channel_title,
         videos: videosToProcess,
+        user_id: user.id,
       });
       setJobId(response.job_id);
       setPhase('processing');

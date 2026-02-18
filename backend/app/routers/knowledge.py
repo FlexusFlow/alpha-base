@@ -17,6 +17,7 @@ from app.models.knowledge import (
     KnowledgeAddRequest,
     KnowledgeAddResponse,
 )
+from app.services.cookie_service import get_cookies_for_domain
 from app.services.job_manager import JobManager
 from app.services.transcriber import delete_transcripts, get_transcript, save_transcript_md
 from app.services.vectorstore import VectorStoreService
@@ -31,6 +32,7 @@ async def process_knowledge_job(
     job_manager: JobManager,
     settings: Settings,
     supabase: Client,
+    user_id: str = "",
 ) -> None:
     """Background task: transcribe videos and vectorize them."""
     job_manager.update_job(job_id, status=JobStatus.IN_PROGRESS)
@@ -39,8 +41,13 @@ async def process_knowledge_job(
 
     for i, video in enumerate(videos):
         try:
+            cookie_str = None
+            if user_id:
+                youtube_url = f"https://www.youtube.com/watch?v={video.video_id}"
+                cookie_str = await get_cookies_for_domain(user_id, youtube_url, supabase)
+
             text = await asyncio.to_thread(
-                get_transcript, video.video_id, video.title
+                get_transcript, video.video_id, video.title, cookie_str
             )
             save_transcript_md(
                 video.video_id, video.title, text,
@@ -141,6 +148,7 @@ async def add_youtube_to_knowledge(
         job_manager=job_manager,
         settings=settings,
         supabase=supabase,
+        user_id=request.user_id,
     )
     return KnowledgeAddResponse(
         job_id=job.id,
