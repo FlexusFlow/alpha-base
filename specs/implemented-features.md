@@ -120,6 +120,14 @@
 - ZIP-001 Utility functions — Domain extraction from filenames, domain normalization, earliest expiry calculation from cookie entries
 - ZIP-001 Constitution alignment — Fixed Tailwind v4→v3 and npm→yarn drift in speckit constitution
 
+## Stage 9: Cookie Consumption for Transcription (ZIP-002)
+
+- ZIP-002 Cookie retrieval service — `cookie_service.py` fetches user's cookies from Supabase Storage by matching target URL domain, with exact match first then parent domain fallback (e.g., `music.youtube.com` → `youtube.com`), case-insensitive normalization, `www.` stripping
+- ZIP-002 Netscape cookie file injection — Replaced broken `http.cookiejar.CookieJar` + `ydl._opener` internal injection with yt-dlp's official `cookiefile` option: JSON cookies converted to Netscape tab-separated format, written to a short-lived temp file, cleaned up in `finally` block
+- ZIP-002 User identity propagation — Added `user_id` field to `KnowledgeAddRequest` (backend Pydantic model + frontend TypeScript interface), threaded through `process_knowledge_job()` to cookie service, frontend extracts user ID via `supabase.auth.getUser()`
+- ZIP-002 Graceful degradation — When no cookies exist or cookie retrieval fails, transcription proceeds without cookies (identical to pre-feature behavior), with structured logging at appropriate levels (info/debug/warning)
+- ZIP-002 Removed fake User-Agent — Dropped hardcoded truncated User-Agent header that caused YouTube bot detection to flag cookie-authenticated requests as mismatched sessions
+
 ## Planned (Not Yet Implemented)
 
 - "Add Article" knowledge source (button exists, disabled; dropzone component ready)
