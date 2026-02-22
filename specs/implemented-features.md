@@ -128,6 +128,17 @@
 - ZIP-002 Graceful degradation — When no cookies exist or cookie retrieval fails, transcription proceeds without cookies (identical to pre-feature behavior), with structured logging at appropriate levels (info/debug/warning)
 - ZIP-002 Removed fake User-Agent — Dropped hardcoded truncated User-Agent header that caused YouTube bot detection to flag cookie-authenticated requests as mismatched sessions
 
-## Planned (Not Yet Implemented)
+## Stage 10: Article Scraping Migration (ZIP-003)
 
-- "Add Article" knowledge source (button exists, disabled; dropzone component ready)
+- ZIP-003 Article scraping backend — Playwright-based headless browser scraping with markdownify HTML→Markdown conversion, selector priority chain (article, [role="article"], .post-content, main, body fallback), 200KB content limit with truncation flag
+- ZIP-003 SSRF protection — URL validation blocking private IP ranges, localhost, link-local addresses, and non-HTTP schemes before scraping
+- ZIP-003 Cookie-aware scraping — Reuses ZIP-001/ZIP-002 cookie infrastructure for paywalled content; Playwright browser context cookie injection with domain matching and graceful fallback
+- ZIP-003 Async article job pipeline — Background scraping via FastAPI BackgroundTasks with SSE job notifications, article status progression (pending→scraping→completed→failed)
+- ZIP-003 Article list view — Card grid on Knowledge Base hub showing title, domain, status badges, creation date; replaces "Coming soon" placeholder with functional "Add Article" flow
+- ZIP-003 Article viewer — Rendered Markdown display via react-markdown + remark-gfm with metadata header (title, source link, date), truncation banner
+- ZIP-003 AI summary generation — Anthropic Haiku-powered article summarization with database caching; subsequent views serve cached summary without re-generation
+- ZIP-003 Article Q&A chat — Streaming conversational Q&A grounded in article content via Anthropic Sonnet, persistent chat history with clear history support
+- ZIP-003 PDF export — Client-side jsPDF generation with sanitized filename from article title
+- ZIP-003 Article deletion with cascade — Confirmation dialog, removes article record + all associated chat messages via database cascade
+
+## Planned (Not Yet Implemented)
