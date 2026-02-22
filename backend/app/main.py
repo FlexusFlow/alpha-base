@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import Settings
-from app.routers import chat, events, knowledge, youtube
+from app.routers import articles, chat, events, knowledge, youtube
 
 
 def create_app() -> FastAPI:
@@ -17,6 +17,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    app.include_router(articles.router)
     app.include_router(chat.router)
     app.include_router(youtube.router)
     app.include_router(knowledge.router)
