@@ -19,15 +19,15 @@
 
 ## Phase 1: Setup — Dependencies & Database
 
-- [ ] T001 [P] Install Python backend dependencies: `playwright` and `markdownify` in `backend/pyproject.toml`
+- [x] T001 [P] Install Python backend dependencies: `playwright` and `markdownify` in `backend/pyproject.toml`
   - Run `cd backend && uv add playwright markdownify`
   - Run `cd backend && uv run playwright install chromium`
   - `markdownify` converts HTML→Markdown (pure Python, no JS dependency needed)
 
-- [ ] T002 [P] Install Next.js frontend dependencies in `next-frontend/package.json`
+- [x] T002 [P] Install Next.js frontend dependencies in `next-frontend/package.json`
   - Run `cd next-frontend && yarn add @anthropic-ai/sdk react-markdown remark-gfm jspdf`
 
-- [ ] T003 [P] Create database migration `next-frontend/supabase/migrations/006_articles.sql`
+- [x] T003 [P] Create database migration `next-frontend/supabase/migrations/006_articles.sql`
   - Create `articles` table per `data-model.md`: id, user_id, url, title, content_markdown, summary, status (CHECK: pending/scraping/completed/failed), error_message, is_truncated, created_at
   - Create `article_chat_messages` table per `data-model.md`: id, article_id, user_id, role (CHECK: user/assistant), content, created_at
   - Enable RLS on both tables
@@ -41,13 +41,13 @@
 
 These tasks create the article scraping backend that all frontend stories depend on.
 
-- [ ] T004 [P] Create Pydantic models in `backend/app/models/articles.py`
+- [x] T004 [P] Create Pydantic models in `backend/app/models/articles.py`
   - `ArticleScrapeRequest`: url (str), user_id (str), use_cookies (bool, default True)
   - `ArticleScrapeResponse`: job_id (str), article_id (str), message (str)
   - `ArticleJob` dataclass: id (str), status (str), message (str) — lightweight job for SSE dispatch, separate from YouTube `Job` dataclass (Option A per plan Generalization Notes)
   - Reuse existing `JobStatus` enum from `backend/app/models/knowledge.py`
 
-- [ ] T005 [P] Create URL validation utility in `backend/app/services/url_validator.py`
+- [x] T005 [P] Create URL validation utility in `backend/app/services/url_validator.py`
   - `def validate_url(url: str) -> str`: returns normalized URL or raises ValueError
   - Check scheme is http or https (reject ftp, file, data, javascript, etc.)
   - Parse with `urllib.parse.urlparse`
@@ -58,7 +58,7 @@ These tasks create the article scraping backend that all frontend stories depend
   - Block hostnames: `localhost`, `0.0.0.0`
   - Raise `ValueError` with descriptive message for blocked URLs
 
-- [ ] T006 Create article scraper service in `backend/app/services/article_scraper.py`
+- [x] T006 Create article scraper service in `backend/app/services/article_scraper.py`
   - `async def scrape_article(url: str, cookies_json: str | None = None) -> dict`
   - Launch Playwright Chromium (headless) via `async_playwright()`
   - Create browser context; if `cookies_json` provided, parse JSON and call `context.add_cookies()` with list of dicts
@@ -73,7 +73,7 @@ These tasks create the article scraping backend that all frontend stories depend
   - Close browser context and browser in `finally` block
   - Raise descriptive exceptions on failure (timeout, navigation error, empty content)
 
-- [ ] T007 Create article router in `backend/app/routers/articles.py`
+- [x] T007 Create article router in `backend/app/routers/articles.py`
   - `POST /v1/api/articles/scrape` endpoint per `contracts/api-contracts.md`
   - Validate URL via `url_validator.validate_url()` — return 400 on failure
   - Create article record in Supabase with `status='pending'`, `url`, `user_id` — get back `article_id`
@@ -89,7 +89,7 @@ These tasks create the article scraping backend that all frontend stories depend
     6. On exception: update article status='failed' with error_message, job status to FAILED
   - Dependencies: `get_job_manager`, `get_supabase`, `get_settings`
 
-- [ ] T008 Register article router in `backend/app/main.py`
+- [x] T008 Register article router in `backend/app/main.py`
   - Import `from app.routers import articles`
   - Add `app.include_router(articles.router)`
   - Follow same pattern as `app.include_router(knowledge.router)`
@@ -102,26 +102,26 @@ These tasks create the article scraping backend that all frontend stories depend
 
 **Independently testable**: Submit a URL via the form, see "Scraping started" toast, wait for SSE notification, verify article appears in list with status "completed".
 
-- [ ] T009 [P] Create TypeScript types in `next-frontend/lib/types/articles.ts`
+- [x] T009 [P] Create TypeScript types in `next-frontend/lib/types/articles.ts`
   - `Article` interface: id, url, title, content_markdown, summary (nullable), status ('pending' | 'scraping' | 'completed' | 'failed'), error_message (nullable), is_truncated, created_at
   - `ArticleScrapeResponse` interface: job_id, article_id, message
   - `CookieCheckResponse` interface: has_cookies, domain
 
-- [ ] T010 [P] Create cookie check API route in `next-frontend/app/api/articles/check-cookies/route.ts`
+- [x] T010 [P] Create cookie check API route in `next-frontend/app/api/articles/check-cookies/route.ts`
   - GET handler with `url` query param
   - Auth check via `createClient()` → `getUser()`
   - Extract domain from URL, normalize (lowercase, strip www.)
   - Query `user_cookies` table for matching domain with parent fallback (same logic as `backend/app/services/cookie_service.py`)
   - Return `{ has_cookies: boolean, domain: string }`
 
-- [ ] T011 [P] Create scrape proxy API route in `next-frontend/app/api/articles/scrape/route.ts`
+- [x] T011 [P] Create scrape proxy API route in `next-frontend/app/api/articles/scrape/route.ts`
   - POST handler
   - Auth check → get user.id
   - Validate URL format (basic `new URL()` check + SSRF: block private IPs, localhost)
   - Proxy to `POST ${NEXT_PUBLIC_API_BASE_URL}/v1/api/articles/scrape` with `{ url, user_id: user.id, use_cookies }`
   - Return 202 with backend response `{ job_id, article_id, message }`
 
-- [ ] T012 Create article fetch form component in `next-frontend/components/articles/article-fetch-form.tsx`
+- [x] T012 Create article fetch form component in `next-frontend/components/articles/article-fetch-form.tsx`
   - `"use client"` component
   - URL input with validation (show error for invalid URLs)
   - On URL change (debounced 500ms): fetch `GET /api/articles/check-cookies?url=...`
@@ -132,17 +132,17 @@ These tasks create the article scraping backend that all frontend stories depend
   - On job complete: show toast with link to article viewer
   - Loading state on submit button
 
-- [ ] T013 Create article add page in `next-frontend/app/dashboard/knowledge/articles/add/page.tsx`
+- [x] T013 Create article add page in `next-frontend/app/dashboard/knowledge/articles/add/page.tsx`
   - Simple page wrapper that renders `<ArticleFetchForm />`
   - Page title: "Add Article"
 
-- [ ] T014 Update Knowledge Base hub in `next-frontend/app/dashboard/knowledge/page.tsx`
+- [x] T014 Update Knowledge Base hub in `next-frontend/app/dashboard/knowledge/page.tsx`
   - Enable the "Add Article" button (remove `disabled` prop)
   - Change `<Button disabled>Add Article</Button>` to `<Button asChild><Link href="/dashboard/knowledge/articles/add">Add Article</Link></Button>`
   - Remove "(Coming soon)" from CardDescription
   - Add "Scraped Articles" section below "Scraped Channels" that renders `<ArticleList />`
 
-- [ ] T015 Create article list component in `next-frontend/components/articles/article-list.tsx`
+- [x] T015 Create article list component in `next-frontend/components/articles/article-list.tsx`
   - `"use client"` component
   - Fetch articles via direct Supabase browser query (no API route — per constitution Principle II): `supabase.from('articles').select('id, url, title, status, is_truncated, created_at').order('created_at', { ascending: false }).range(offset, offset + pageSize - 1)`
   - Display as cards grid (similar to channel cards in knowledge page): title, domain extracted from URL, creation date, status badge (pending=yellow, scraping=blue, completed=green, failed=red)
@@ -151,7 +151,7 @@ These tasks create the article scraping backend that all frontend stories depend
   - Delete: call `DELETE /api/articles/{id}` → show toast → refresh list
   - Pagination (client-side is fine for MVP; server-side if needed later)
 
-- [ ] T016 Create article delete API route in `next-frontend/app/api/articles/[id]/route.ts`
+- [x] T016 Create article delete API route in `next-frontend/app/api/articles/[id]/route.ts`
   - DELETE handler
   - Auth check → get user.id
   - Delete from `articles` table via server Supabase client (CASCADE handles chat messages)
@@ -165,12 +165,12 @@ These tasks create the article scraping backend that all frontend stories depend
 
 **Independently testable**: Navigate to a completed article → see rendered Markdown with title, source link, date. Action buttons visible (Summarize, Ask Questions, Download PDF, Delete).
 
-- [ ] T017 Create article view page in `next-frontend/app/dashboard/knowledge/articles/[id]/page.tsx`
+- [x] T017 Create article view page in `next-frontend/app/dashboard/knowledge/articles/[id]/page.tsx`
   - Server component: fetch article from Supabase server client by ID
   - If not found or status != 'completed': redirect to `/dashboard/knowledge`
   - Pass article data to `<ArticleViewer article={article} />`
 
-- [ ] T018 Create article viewer component in `next-frontend/components/articles/article-viewer.tsx`
+- [x] T018 Create article viewer component in `next-frontend/components/articles/article-viewer.tsx`
   - `"use client"` component
   - Render Markdown content via `react-markdown` with `remark-gfm` plugin
   - Show article title as `<h1>`
@@ -189,7 +189,7 @@ These tasks create the article scraping backend that all frontend stories depend
 
 **Independently testable**: View article → click "Summarize" → see loading spinner → summary appears → reload page → summary still displayed (cached).
 
-- [ ] T019 Create summarize API route in `next-frontend/app/api/articles/[id]/summarize/route.ts`
+- [x] T019 Create summarize API route in `next-frontend/app/api/articles/[id]/summarize/route.ts`
   - POST handler
   - Auth check → get user.id
   - Fetch article from Supabase server client by ID (verify user owns it)
@@ -201,7 +201,7 @@ These tasks create the article scraping backend that all frontend stories depend
   - Store summary: update `articles.summary` in Supabase
   - Return `{ summary }`
 
-- [ ] T020 Create article summary component in `next-frontend/components/articles/article-summary.tsx`
+- [x] T020 Create article summary component in `next-frontend/components/articles/article-summary.tsx`
   - `"use client"` component
   - Props: `articleId: string`, `initialSummary: string | null`
   - If `initialSummary` exists: display it immediately
@@ -210,7 +210,7 @@ These tasks create the article scraping backend that all frontend stories depend
   - Display summary text in a styled card/section below article metadata
   - Error handling: toast on failure
 
-- [ ] T021 Integrate summary into article viewer in `next-frontend/components/articles/article-viewer.tsx`
+- [x] T021 Integrate summary into article viewer in `next-frontend/components/articles/article-viewer.tsx`
   - Replace placeholder Summarize button with `<ArticleSummary articleId={article.id} initialSummary={article.summary} />`
 
 ---
@@ -221,7 +221,7 @@ These tasks create the article scraping backend that all frontend stories depend
 
 **Independently testable**: View article → click "Ask Questions" → type question → receive streaming response → reload → chat history preserved → clear history works.
 
-- [ ] T022 Create chat API route in `next-frontend/app/api/articles/[id]/chat/route.ts`
+- [x] T022 Create chat API route in `next-frontend/app/api/articles/[id]/chat/route.ts`
   - POST handler with streaming response
   - Auth check → get user.id
   - Parse body: `{ message: string, history: { role, content }[] }`
@@ -235,11 +235,11 @@ These tasks create the article scraping backend that all frontend stories depend
   - After stream completes: save user message + full assistant response to `article_chat_messages`
   - Send final `data: {"done": true}\n\n`
 
-- [ ] T023 [P] Create chat history routes in `next-frontend/app/api/articles/[id]/chat/history/route.ts`
+- [x] T023 [P] Create chat history routes in `next-frontend/app/api/articles/[id]/chat/history/route.ts`
   - GET handler: auth check → fetch `article_chat_messages` ordered by `created_at ASC` for article_id → return `{ messages: [...] }`
   - DELETE handler: auth check → delete all `article_chat_messages` where `article_id` matches → return `{ message: "Chat history cleared" }`
 
-- [ ] T024 Create article chat component in `next-frontend/components/articles/article-chat.tsx`
+- [x] T024 Create article chat component in `next-frontend/components/articles/article-chat.tsx`
   - `"use client"` component
   - Props: `articleId: string`
   - On mount: fetch chat history from `GET /api/articles/{id}/chat/history`
@@ -251,7 +251,7 @@ These tasks create the article scraping backend that all frontend stories depend
   - Auto-scroll to bottom on new messages
   - Disable input while streaming
 
-- [ ] T025 Integrate chat into article viewer in `next-frontend/components/articles/article-viewer.tsx`
+- [x] T025 Integrate chat into article viewer in `next-frontend/components/articles/article-viewer.tsx`
   - Replace placeholder "Ask Questions" button with expandable section or tab that renders `<ArticleChat articleId={article.id} />`
 
 ---
@@ -262,7 +262,7 @@ These tasks create the article scraping backend that all frontend stories depend
 
 **Independently testable**: View article → click "Download PDF" → PDF file downloads with article title as filename.
 
-- [ ] T026 Create PDF generation utility in `next-frontend/lib/pdf.ts`
+- [x] T026 Create PDF generation utility in `next-frontend/lib/pdf.ts`
   - `function generateArticlePdf(title: string, content: string): void`
   - Use `jsPDF` to create A4 document
   - Add title as bold header
@@ -270,7 +270,7 @@ These tasks create the article scraping backend that all frontend stories depend
   - Trigger browser download with filename: `${sanitizeFilename(title)}.pdf`
   - `sanitizeFilename`: replace non-alphanumeric chars (except hyphens/spaces) with underscore, limit to 100 chars
 
-- [ ] T027 Integrate PDF download button in `next-frontend/components/articles/article-viewer.tsx`
+- [x] T027 Integrate PDF download button in `next-frontend/components/articles/article-viewer.tsx`
   - Import `generateArticlePdf` from `@/lib/pdf`
   - Replace placeholder "Download PDF" button with onClick handler: `generateArticlePdf(article.title, article.content_markdown)`
   - Use lucide `Download` icon

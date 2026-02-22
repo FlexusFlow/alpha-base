@@ -17,6 +17,7 @@ import {
 import { Youtube, FileText, Loader2, CheckSquare, X } from 'lucide-react';
 import Link from 'next/link';
 import { ChannelCard } from '@/components/youtube/channel-card';
+import { ArticleList } from '@/components/articles/article-list';
 import { createBrowserChannelHelpers } from '@/lib/supabase/channels';
 import { DbChannel } from '@/lib/types/database';
 import { useToast } from '@/hooks/use-toast';
@@ -176,11 +177,13 @@ export default function KnowledgeBasePage() {
               Article
             </CardTitle>
             <CardDescription>
-              Add articles and documents to your knowledge base (Coming soon)
+              Add articles and documents to your knowledge base
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button disabled>Add Article</Button>
+            <Button asChild>
+              <Link href="/dashboard/knowledge/articles/add">Add Article</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -242,6 +245,12 @@ export default function KnowledgeBasePage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Scraped Articles */}
+      <div className="space-y-3">
+        <h2 className="text-xl font-semibold">Scraped Articles</h2>
+        <ArticleList />
       </div>
 
       {/* Bulk Delete Floating Action Bar */}
