@@ -51,7 +51,8 @@ Long-running operations (video transcription, vectorization) MUST:
 | Database | Supabase (PostgreSQL) | With RLS |
 | Vector store | DeepLake | Via langchain |
 | Transcription | youtube-transcript-api | yt-dlp as fallback |
-| LLM | OpenAI (gpt-4o) | For chat/RAG |
+| LLM (RAG chat) | OpenAI (gpt-4o) | For knowledge base RAG chat |
+| LLM (article features) | Anthropic Claude (Haiku/Sonnet) | For article summarization & Q&A |
 | Embeddings | OpenAI (text-embedding-3-small) | |
 
 ## Development Workflow
@@ -68,7 +69,8 @@ Long-running operations (video transcription, vectorization) MUST:
 - All PRs MUST be reviewed against these principles.
 - When a principle conflicts with shipping speed, document the trade-off explicitly in the PR description.
 
-**Version**: 1.1.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-17
+**Version**: 1.2.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-22
 
 ### Amendment Log
+- **1.2.0** (2026-02-22): Added Anthropic Claude (Haiku/Sonnet) as approved LLM for article summarization and Q&A (ZIP-003).
 - **1.1.0** (2026-02-17): Fixed Tailwind CSS v4→v3 and npm→yarn to match actual project setup.
