@@ -17,6 +17,20 @@ class VectorStoreService:
             chunk_overlap=settings.chunk_overlap,
         )
         self.deeplake_path = settings.deeplake_path
+        self._is_cloud = settings.deeplake_path.startswith("hub://")
+        self._activeloop_token = settings.activeloop_token if self._is_cloud else None
+
+    def _get_db_kwargs(self, **extra) -> dict:
+        """Build common kwargs for DeeplakeVectorStore instantiation."""
+        kwargs = {
+            "dataset_path": self.deeplake_path,
+            "embedding_function": self.embeddings,
+            **extra,
+        }
+        if self._is_cloud:
+            kwargs["runtime"] = {"tensor_db": True}
+            kwargs["token"] = self._activeloop_token
+        return kwargs
 
     def add_documents(self, texts: list[str], metadatas: list[dict]) -> None:
         """Batch add documents to DeepLake. Splits texts into chunks first."""
@@ -31,7 +45,7 @@ class VectorStoreService:
         if not all_chunks:
             return
 
-        db = DeeplakeVectorStore(dataset_path=self.deeplake_path, embedding_function=self.embeddings, overwrite=False)
+        db = DeeplakeVectorStore(**self._get_db_kwargs(overwrite=False))
         db.add_texts(
             texts=all_chunks,
             metadatas=all_metas,
@@ -44,11 +58,7 @@ class VectorStoreService:
         if not video_ids:
             return 0
 
-        db = DeeplakeVectorStore(
-            dataset_path=self.deeplake_path,
-            embedding_function=self.embeddings,
-            overwrite=False,
-        )
+        db = DeeplakeVectorStore(**self._get_db_kwargs(overwrite=False))
 
         ids_str = ", ".join(f"'{vid}'" for vid in video_ids)
         query = f"SELECT ids FROM (SELECT * WHERE metadata['video_id'] IN ({ids_str}))"
@@ -62,7 +72,7 @@ class VectorStoreService:
         return len(matching_ids)
 
     async def similarity_search(
-        self, query: str, k: int = 5, score_threshold: float = 0.0
+        self, query: str, k: int = 5, score_threshold: float = 0.0, deep_memory: bool = False
     ) -> list[tuple]:
         """Search the vector store and return (doc, score) tuples.
 
@@ -70,12 +80,34 @@ class VectorStoreService:
             query: Search query text.
             k: Maximum number of results.
             score_threshold: Minimum relevance score (0-1) to include a result.
+            deep_memory: If True, use Deep Memory enhanced search (requires cloud DeepLake).
         """
-        db = DeeplakeVectorStore(
-            dataset_path=self.deeplake_path,
-            embedding_function=self.embeddings,
-            read_only=True,
-        )
+        db = DeeplakeVectorStore(**self._get_db_kwargs(read_only=True))
         return await db.asimilarity_search_with_relevance_scores(
-            query=query, k=k, score_threshold=score_threshold
+            query=query, k=k, score_threshold=score_threshold, deep_memory=deep_memory
         )
+
+    def get_all_chunk_ids_and_texts(self) -> list[dict]:
+        """Enumerate all documents in the DeepLake dataset.
+
+        Returns list of dicts: [{"id": chunk_id, "text": page_content, "metadata": {...}}]
+        """
+        db = DeeplakeVectorStore(**self._get_db_kwargs(read_only=True))
+        dataset = db.dataset
+
+        ids = dataset["ids"][:]
+        texts = dataset["documents"][:]
+        metadatas = dataset["metadata"][:]
+
+        return [
+            {"id": str(ids[i]), "text": str(texts[i]), "metadata": metadatas[i]}
+            for i in range(len(ids))
+        ]
+
+    def get_deep_memory_api(self):
+        """Return the deep_memory sub-API from the DeepLake vectorstore.
+
+        Used for .train(), .status(), .evaluate() calls.
+        """
+        db = DeeplakeVectorStore(**self._get_db_kwargs(read_only=False))
+        return db.vectorstore.deep_memory

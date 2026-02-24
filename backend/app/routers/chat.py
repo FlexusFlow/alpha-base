@@ -18,13 +18,13 @@ async def chat(
     settings: Settings = Depends(get_settings),
     supabase: Client = Depends(get_supabase),
 ):
-    chat_service = ChatService(settings)
+    chat_service = ChatService(settings, supabase=supabase)
 
     async def event_generator():
         full_response = ""
         sources = []
 
-        async for chunk in chat_service.stream(request.message, request.history):
+        async for chunk in chat_service.stream(request.message, request.history, user_id=request.user_id):
             if "token" in chunk:
                 full_response += chunk["token"]
                 yield {"data": json.dumps({"token": chunk["token"]})}
