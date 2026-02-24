@@ -141,4 +141,26 @@
 - ZIP-003 PDF export — Client-side jsPDF generation with sanitized filename from article title
 - ZIP-003 Article deletion with cascade — Confirmation dialog, removes article record + all associated chat messages via database cascade
 
+## Stage 11: Deep Memory Training (ZIP-004)
+
+- ZIP-004 Training data generation pipeline — LLM-powered question generation from transcript chunks (3-5 diverse questions per chunk) using GPT-4o, with resumable processing, 5,000-pair cap, and SSE progress reporting
+- ZIP-004 Training data storage & review — Training pairs persisted in Supabase (`deep_memory_training_pairs` table) with sample preview, coverage statistics (avg questions/chunk, chunk coverage %), and administrator approval step before training
+- ZIP-004 Deep Memory training execution — Background job calls DeepLake Cloud `deep_memory.train()` API with question-chunk pairs, polls with exponential backoff, evaluates recall improvement via `deep_memory.evaluate()`, stores metrics
+- ZIP-004 Search integration — `deep_memory=True` flag passed to DeepLake similarity search when enabled, transparent to end users, immediate toggle without retraining
+- ZIP-004 Deep Memory toggle — Enable/disable switch on dedicated `/dashboard/deep-memory` page with current status display (enabled/disabled, last trained date), gated behind at least one completed training run
+- ZIP-004 Incremental retraining — Identifies new chunks since last training run, generates pairs only for new content, combines with existing pairs for retraining, training history comparison
+- ZIP-004 Database schema — Three new Supabase tables (`deep_memory_training_runs`, `deep_memory_training_pairs`, `deep_memory_settings`) with RLS, CASCADE deletes, status CHECK constraint
+- ZIP-004 Dashboard UI — Workflow-driven page with Generate → Review → Train → Results steps, training run history table, settings card, real-time SSE progress indicators
+
+## Stage 12: Failed Training Recovery & Cloud-Only Gate (ZIP-005)
+
+- ZIP-005 Phase-specific failure statuses — Replaced generic "failed" status with `generating_failed` and `training_failed` to distinguish which phase failed, with DB migration for CHECK constraint update and data migration of existing records
+- ZIP-005 Proceed from failure — `POST /v1/api/deep-memory/proceed` endpoint resumes failed runs from point of failure: generation skips already-processed chunks, training re-submits existing pairs to DeepLake
+- ZIP-005 Remove failed runs — `DELETE /v1/api/deep-memory/runs/{run_id}` endpoint with CASCADE cleanup of training pairs, confirmation dialog, restricted to failed statuses only
+- ZIP-005 Generation blocking — Broadened from failed-only to all non-completed statuses: `generating`, `generated`, `training`, `generating_failed`, `training_failed` all block new generation, with status-aware explanatory messages
+- ZIP-005 Expandable Training History rows — Accordion-style expandable rows for active and failed runs with inline action buttons (Refresh for active, Proceed/Delete for failed), error message display, replaces Workflow card alert
+- ZIP-005 Progress column — `processed_chunks/total_chunks` display for generating and failed statuses, refresh icon for active runs to update progress without page reload
+- ZIP-005 Cloud-only gate — `is_cloud` field in settings response derived from `VectorStoreService._is_cloud`; when DeepLake is local, hides all Deep Memory page cards and shows warning to configure `hub://` path
+- ZIP-005 Correct resume progress — Fixed `total_chunks` computation on resume to include already-processed chunks (e.g., `51/80` not `51/30`)
+
 ## Planned (Not Yet Implemented)

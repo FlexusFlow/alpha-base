@@ -10,7 +10,7 @@ export interface KnowledgeAddResponse {
   total_videos: number;
 }
 
-export type JobStatus = "pending" | "in_progress" | "completed" | "failed";
+export type JobStatus = "pending" | "in_progress" | "completed" | "failed" | "generating_failed" | "training_failed";
 
 export interface JobStatusUpdate {
   id: string;

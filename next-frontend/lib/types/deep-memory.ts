@@ -15,6 +15,9 @@ export interface TrainingRunSummary {
   id: string;
   status: string;
   pair_count: number;
+  processed_chunks: number;
+  total_chunks: number;
+  error_message: string | null;
   metrics: Record<string, number>;
   started_at: string;
   completed_at: string | null;
@@ -38,6 +41,12 @@ export interface TrainingRunDetail extends TrainingRunSummary {
   };
 }
 
+export interface ProceedResponse {
+  job_id: string;
+  training_run_id: string;
+  message: string;
+}
+
 export interface DeepMemorySettings {
   enabled: boolean;
   last_trained_at: string | null;
@@ -45,6 +54,10 @@ export interface DeepMemorySettings {
   can_enable: boolean;
   total_chunks: number;
   trained_chunk_count: number;
+  has_blocking_run: boolean;
+  blocking_run_id: string | null;
+  blocking_run_status: string | null;
+  is_cloud: boolean;
 }
 
 export interface DeepMemoryJobUpdate {

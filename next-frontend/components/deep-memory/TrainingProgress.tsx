@@ -37,7 +37,7 @@ export function TrainingProgress({ jobId, type, onComplete, onError }: TrainingP
 
         if (update.status === "completed" || update.status === "generated") {
           onComplete?.(update)
-        } else if (update.status === "failed") {
+        } else if (update.status === "generating_failed" || update.status === "training_failed") {
           onError?.(update.error_message || "Unknown error")
         }
       },
@@ -56,8 +56,10 @@ export function TrainingProgress({ jobId, type, onComplete, onError }: TrainingP
         <span className="font-medium">{progress}%</span>
       </div>
       <Progress value={progress} />
-      {status === "failed" && (
-        <p className="text-sm text-destructive">Generation failed. Check logs for details.</p>
+      {(status === "generating_failed" || status === "training_failed") && (
+        <p className="text-sm text-destructive">
+          {status === "generating_failed" ? "Generation" : "Training"} failed. Check logs for details.
+        </p>
       )}
     </div>
   )

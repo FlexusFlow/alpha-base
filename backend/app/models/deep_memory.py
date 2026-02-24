@@ -35,6 +35,9 @@ class TrainingRunSummary(BaseModel):
     id: str
     status: str
     pair_count: int
+    processed_chunks: int
+    total_chunks: int
+    error_message: str | None = None
     metrics: dict
     started_at: datetime
     completed_at: datetime | None
@@ -60,6 +63,21 @@ class DeepMemorySettingsResponse(BaseModel):
     can_enable: bool
     total_chunks: int
     trained_chunk_count: int
+    has_blocking_run: bool = False
+    blocking_run_id: str | None = None
+    blocking_run_status: str | None = None
+    is_cloud: bool = True
+
+
+class ProceedRequest(BaseModel):
+    training_run_id: str
+    user_id: str
+
+
+class ProceedResponse(BaseModel):
+    job_id: str
+    training_run_id: str
+    message: str
 
 
 class UpdateSettingsRequest(BaseModel):
