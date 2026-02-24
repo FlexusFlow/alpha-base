@@ -1,6 +1,8 @@
 import asyncio
 import logging
+import time
 import traceback
+from datetime import datetime, timezone
 
 from supabase import Client
 
@@ -50,31 +52,45 @@ async def train_deep_memory(
         completed_runs = supabase.table("deep_memory_training_runs").select(
             "id"
         ).eq("user_id", user_id).eq("status", "completed").execute()
+        completed_run_ids = [r["id"] for r in (completed_runs.data or [])]
 
         historical_pairs = []
-        for rid_row in (completed_runs.data or []):
-            rid = rid_row["id"]
-            hist = supabase.table("deep_memory_training_pairs").select(
+        if completed_run_ids:
+            hist_result = supabase.table("deep_memory_training_pairs").select(
                 "question_text, chunk_id, relevance_score"
-            ).eq("training_run_id", rid).execute()
-            historical_pairs.extend(hist.data or [])
+            ).in_("training_run_id", completed_run_ids).execute()
+            historical_pairs = hist_result.data or []
 
         pairs = current_pairs + historical_pairs
 
         # Format for Deep Memory API
-        queries = [p["question_text"] for p in pairs]
-        relevance = [[(p["chunk_id"], p["relevance_score"])] for p in pairs]
+        all_queries = [p["question_text"] for p in pairs]
+        all_relevance = [[(p["chunk_id"], p["relevance_score"])] for p in pairs]
+
+        # Split held-out test set BEFORE training (10%, min 20 total to split)
+        if len(all_queries) >= 20:
+            test_size = max(1, len(all_queries) // 10)
+            test_queries = all_queries[:test_size]
+            test_relevance = all_relevance[:test_size]
+            train_queries = all_queries[test_size:]
+            train_relevance = all_relevance[test_size:]
+        else:
+            # Too few pairs for meaningful evaluation — train on all, skip eval
+            train_queries = all_queries
+            train_relevance = all_relevance
+            test_queries = []
+            test_relevance = []
 
         # Update pair_count to reflect merged total
         supabase.table("deep_memory_training_runs").update({
-            "pair_count": len(pairs),
+            "pair_count": len(all_queries),
         }).eq("id", training_run_id).execute()
 
         job_manager.update_job(
             job_id,
             extra={
                 "status": "training",
-                "message": f"Starting Deep Memory training with {len(queries)} pairs ({len(current_pairs)} new + {len(historical_pairs)} historical)...",
+                "message": f"Starting Deep Memory training with {len(train_queries)} pairs ({len(current_pairs)} new + {len(historical_pairs)} historical, {len(test_queries)} held out for eval)...",
                 "progress": 10,
             },
         )
@@ -83,9 +99,9 @@ async def train_deep_memory(
         vectorstore = VectorStoreService(settings)
         deep_memory_api = await asyncio.to_thread(vectorstore.get_deep_memory_api)
 
-        # Start training
+        # Start training (only on train split, excludes held-out test set)
         deeplake_job_id = await asyncio.to_thread(
-            deep_memory_api.train, queries=queries, relevance=relevance
+            deep_memory_api.train, queries=train_queries, relevance=train_relevance
         )
 
         # Store deeplake job ID
@@ -93,12 +109,20 @@ async def train_deep_memory(
             "deeplake_job_id": str(deeplake_job_id),
         }).eq("id", training_run_id).execute()
 
-        # Poll status with exponential backoff
+        # Poll status with exponential backoff and overall timeout
         backoff = 5
         max_backoff = 60
+        max_total_seconds = 7200  # 2 hours
         progress = 20
+        poll_start = time.monotonic()
 
         while True:
+            elapsed = time.monotonic() - poll_start
+            if elapsed > max_total_seconds:
+                raise RuntimeError(
+                    f"Training timed out after {max_total_seconds // 3600} hours"
+                )
+
             status = await asyncio.to_thread(deep_memory_api.status, deeplake_job_id)
             logger.info(f"Deep Memory training status: {status}")
 
@@ -122,38 +146,37 @@ async def train_deep_memory(
             await asyncio.sleep(backoff)
             backoff = min(backoff * 2, max_backoff)
 
-        # Evaluate with held-out test set (10%)
-        job_manager.update_job(
-            job_id,
-            extra={
-                "status": "training",
-                "message": "Evaluating Deep Memory performance...",
-                "progress": 92,
-            },
-        )
-
-        test_size = max(1, len(queries) // 10)
-        test_queries = queries[:test_size]
-        test_relevance = relevance[:test_size]
-
-        eval_result = await asyncio.to_thread(
-            deep_memory_api.evaluate,
-            queries=test_queries,
-            relevance=test_relevance,
-            top_k=[1, 3, 5, 10],
-        )
-
+        # Evaluate with held-out test set (split before training)
         metrics = {}
-        if isinstance(eval_result, dict):
-            metrics = eval_result
+        if test_queries:
+            job_manager.update_job(
+                job_id,
+                extra={
+                    "status": "training",
+                    "message": f"Evaluating Deep Memory on {len(test_queries)} held-out pairs...",
+                    "progress": 92,
+                },
+            )
+
+            eval_result = await asyncio.to_thread(
+                deep_memory_api.evaluate,
+                queries=test_queries,
+                relevance=test_relevance,
+                top_k=[1, 3, 5, 10],
+            )
+
+            if isinstance(eval_result, dict):
+                metrics = eval_result
+            else:
+                metrics = {"raw_result": str(eval_result)}
         else:
-            metrics = {"raw_result": str(eval_result)}
+            logger.info("Skipping evaluation: too few pairs for meaningful held-out split")
 
         # Update training run as completed
         supabase.table("deep_memory_training_runs").update({
             "status": "completed",
             "metrics": metrics,
-            "completed_at": "now()",
+            "completed_at": datetime.now(timezone.utc).isoformat(),
         }).eq("id", training_run_id).execute()
 
         # Get user_id for settings update
@@ -165,9 +188,9 @@ async def train_deep_memory(
         # Upsert deep_memory_settings
         supabase.table("deep_memory_settings").upsert({
             "user_id": user_id,
-            "last_trained_at": "now()",
+            "last_trained_at": datetime.now(timezone.utc).isoformat(),
             "last_training_run_id": training_run_id,
-            "updated_at": "now()",
+            "updated_at": datetime.now(timezone.utc).isoformat(),
         }, on_conflict="user_id").execute()
 
         job_manager.update_job(

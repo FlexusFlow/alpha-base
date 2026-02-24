@@ -263,6 +263,45 @@ These tasks update the existing vector store service to support Cloud DeepLake a
 
 ---
 
+## Phase 8: PR Review Fixes
+
+Fixes identified during PR #1 code review. All tasks apply to code already implemented in Phases 1-7.
+
+- [x] T026 Add timeout guard to Deep Memory training polling loop in `backend/app/services/deep_memory_service.py`
+  - The `while True` loop polling `deep_memory_api.status()` has exponential backoff but no overall timeout
+  - Add a max total elapsed time check (e.g., 2 hours / 7200 seconds)
+  - When exceeded, mark the training run as `failed` with error_message "Training timed out after 2 hours"
+  - Update job via JobManager with failed status
+
+- [x] T027 [P] Fix `"now()"` string bug — replace with proper UTC timestamps
+  - The Supabase Python client stores `"now()"` as a literal string, not a SQL function call
+  - Replace all occurrences of `"now()"` with `datetime.now(timezone.utc).isoformat()` in:
+    - `backend/app/routers/deep_memory.py` — `update_settings_endpoint` upsert (`updated_at`)
+    - `backend/app/services/deep_memory_service.py` — training run completion (`completed_at`), settings upsert (`last_trained_at`, `updated_at`)
+    - `backend/app/services/training_generator.py` — generation completion (`completed_at`)
+  - Import `from datetime import datetime, timezone` where needed
+
+- [x] T028 [P] Add lightweight `get_chunk_count()` to `backend/app/services/vectorstore.py` and use in settings endpoint
+  - Add `get_chunk_count() -> int` method that returns `len(db.dataset)` without loading all text content into memory
+  - Update `get_settings_endpoint` in `backend/app/routers/deep_memory.py` to use `get_chunk_count()` instead of `get_all_chunk_ids_and_texts()`
+
+- [x] T029 [P] Fix N+1 queries for historical pair loading in `backend/app/services/deep_memory_service.py` and `backend/app/services/training_generator.py`
+  - In `deep_memory_service.py`: replace per-run loop with single query using `.in_()` filter on completed run IDs
+  - In `training_generator.py`: same pattern — batch-load all `chunk_id` values from completed runs in one query
+  - Use Supabase `.in_("training_run_id", completed_run_ids)` filter
+
+- [x] T030 Fix evaluation to use proper held-out test set in `backend/app/services/deep_memory_service.py`
+  - Currently the "test set" (first 10% of queries) was included in training, so metrics are biased
+  - Split queries/relevance BEFORE calling `deep_memory_api.train()` — exclude the test portion from training
+  - Train on 90% of pairs, evaluate on the held-out 10%
+  - If total pairs < 20, skip evaluation (too few for meaningful split) and store empty metrics
+
+- [x] T031 [P] Minor cleanups in router and frontend
+  - Move inline import `from app.services.deep_memory_service import train_deep_memory` to top-level in `backend/app/routers/deep_memory.py`
+  - Prefix unused `data` parameter with underscore in `handleGenerationComplete` callback in `next-frontend/app/dashboard/deep-memory/page.tsx`
+
+---
+
 ## Dependencies
 
 ```

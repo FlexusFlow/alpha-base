@@ -71,7 +71,7 @@ export default function DeepMemoryPage() {
     }
   }
 
-  const handleGenerationComplete = useCallback(async (data: DeepMemoryJobUpdate) => {
+  const handleGenerationComplete = useCallback(async (_data: DeepMemoryJobUpdate) => {
     setStep("generated")
     setJobId(null)
     // Refresh runs and load the latest run detail

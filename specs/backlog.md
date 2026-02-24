@@ -1,5 +1,9 @@
 # ZipTrader Backlog
 
+## Priority: High
+
+- **FastAPI Auth Middleware (Defense in Depth)** — Backend endpoints accept `user_id` from request body/query params. While Next.js API routes inject the authenticated user's ID, the FastAPI endpoints themselves are unauthenticated — any direct caller can pass any `user_id` and access another user's data (Supabase service-role client bypasses RLS). Add JWT validation middleware to FastAPI that extracts `user_id` from the Supabase access token. Affects all existing routers (`chat`, `knowledge`, `youtube`, `articles`, `deep_memory`). Discovered during ZIP-004 PR review.
+
 ## Priority: RAG Quality
 
 - **Deep Memory for RAG Accuracy (+22%)** — Train Deep Lake's Deep Memory feature on ZipTrader's dataset to boost retrieval accuracy by up to 22%. Trains a lightweight transformation layer on top of existing embeddings, adapting them to financial/trading domain. Steps: (1) generate question-chunk pairs from existing transcripts via LLM, (2) `db.deep_memory.train(queries, relevance)`, (3) enable `deep_memory=True` on search. Requires Cloud DeepLake migration first. Especially valuable for trading jargon, ticker symbols, and domain-specific terminology that generic embeddings handle poorly. See technote: `.technotes/deep-memory-rag-accuracy.md`

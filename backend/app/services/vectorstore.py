@@ -87,6 +87,11 @@ class VectorStoreService:
             query=query, k=k, score_threshold=score_threshold, deep_memory=deep_memory
         )
 
+    def get_chunk_count(self) -> int:
+        """Return the number of documents in the DeepLake dataset without loading content."""
+        db = DeeplakeVectorStore(**self._get_db_kwargs(read_only=True))
+        return len(db.dataset)
+
     def get_all_chunk_ids_and_texts(self) -> list[dict]:
         """Enumerate all documents in the DeepLake dataset.
 

@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from supabase import Client
@@ -18,6 +19,7 @@ from app.models.deep_memory import (
     UpdateSettingsRequest,
 )
 from app.services.job_manager import JobManager
+from app.services.deep_memory_service import train_deep_memory
 from app.services.training_generator import generate_training_data
 from app.services.vectorstore import VectorStoreService
 
@@ -95,8 +97,6 @@ async def start_training(
 
     # Create job for SSE tracking
     job = job_manager.create_job(total_videos=0)
-
-    from app.services.deep_memory_service import train_deep_memory
 
     background_tasks.add_task(
         train_deep_memory,
@@ -212,10 +212,9 @@ async def get_settings_endpoint(
     ).eq("user_id", user_id).eq("status", "completed").execute()
     can_enable = (completed_result.count or 0) > 0
 
-    # Get total chunks from vector store
+    # Get total chunks from vector store (lightweight count, no text loading)
     vectorstore = VectorStoreService(settings)
-    chunks = await asyncio.to_thread(vectorstore.get_all_chunk_ids_and_texts)
-    total_chunks = len(chunks)
+    total_chunks = await asyncio.to_thread(vectorstore.get_chunk_count)
 
     # Get trained chunk count from last completed run
     trained_chunk_count = 0
@@ -277,7 +276,7 @@ async def update_settings_endpoint(
     supabase.table("deep_memory_settings").upsert({
         "user_id": request.user_id,
         "enabled": request.enabled,
-        "updated_at": "now()",
+        "updated_at": datetime.now(timezone.utc).isoformat(),
     }, on_conflict="user_id").execute()
 
     return {

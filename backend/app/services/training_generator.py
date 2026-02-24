@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import traceback
+from datetime import datetime, timezone
 
 from openai import AsyncOpenAI
 from supabase import Client
@@ -70,13 +71,13 @@ async def generate_training_data(
         completed_run_ids = [r["id"] for r in (completed_runs.data or [])]
 
         previously_trained_chunk_ids: set[str] = set()
-        for rid in completed_run_ids:
-            pairs = supabase.table("deep_memory_training_pairs").select(
+        if completed_run_ids:
+            hist_pairs = supabase.table("deep_memory_training_pairs").select(
                 "chunk_id"
-            ).eq("training_run_id", rid).execute()
-            previously_trained_chunk_ids.update(
-                row["chunk_id"] for row in (pairs.data or [])
-            )
+            ).in_("training_run_id", completed_run_ids).execute()
+            previously_trained_chunk_ids = {
+                row["chunk_id"] for row in (hist_pairs.data or [])
+            }
 
         # Skip chunks already in this run OR from previous completed runs
         skip_ids = current_run_chunk_ids | previously_trained_chunk_ids
@@ -170,7 +171,7 @@ async def generate_training_data(
             "status": "generated",
             "pair_count": pair_count,
             "processed_chunks": total_chunks,
-            "completed_at": "now()",
+            "completed_at": datetime.now(timezone.utc).isoformat(),
         }).eq("id", training_run_id).execute()
 
         job_manager.update_job(
