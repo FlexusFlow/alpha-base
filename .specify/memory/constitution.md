@@ -69,9 +69,10 @@ Long-running operations (video transcription, vectorization) MUST:
 - All PRs MUST be reviewed against these principles.
 - When a principle conflicts with shipping speed, document the trade-off explicitly in the PR description.
 
-**Version**: 1.3.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-23
+**Version**: 1.4.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-24
 
 ### Amendment Log
+- **1.4.0** (2026-02-24): Documented Deep Memory cloud-only requirement — Deep Memory features are gated behind `hub://` DeepLake paths; local vector stores show a warning (ZIP-005).
 - **1.3.0** (2026-02-23): Updated DeepLake to Cloud Managed Tensor Database for Deep Memory support (ZIP-004).
 - **1.2.0** (2026-02-22): Added Anthropic Claude (Haiku/Sonnet) as approved LLM for article summarization and Q&A (ZIP-003).
 - **1.1.0** (2026-02-17): Fixed Tailwind CSS v4→v3 and npm→yarn to match actual project setup.
