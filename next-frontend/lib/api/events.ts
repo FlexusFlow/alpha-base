@@ -12,7 +12,7 @@ export function subscribeToJob(
   eventSource.addEventListener('job_update', (event: MessageEvent) => {
     const data: JobStatusUpdate = JSON.parse(event.data);
     onUpdate(data);
-    if (data.status === 'completed' || data.status === 'failed') {
+    if (data.status === 'completed' || data.status === 'generating_failed' || data.status === 'training_failed') {
       eventSource.close();
     }
   });

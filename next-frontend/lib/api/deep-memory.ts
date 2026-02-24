@@ -1,6 +1,7 @@
 import type {
   DeepMemorySettings,
   GenerateResponse,
+  ProceedResponse,
   TrainResponse,
   TrainingRunDetail,
   TrainingRunSummary,
@@ -26,6 +27,27 @@ export async function startTraining(runId: string): Promise<TrainResponse> {
     throw new Error(err.error || 'Failed to start training');
   }
   return res.json();
+}
+
+export async function proceedFailedRun(runId: string): Promise<ProceedResponse> {
+  const res = await fetch('/api/deep-memory/proceed', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ training_run_id: runId }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to proceed');
+  }
+  return res.json();
+}
+
+export async function deleteFailedRun(runId: string): Promise<void> {
+  const res = await fetch(`/api/deep-memory/runs/${runId}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to delete run');
+  }
 }
 
 export async function getTrainingRuns(): Promise<TrainingRunSummary[]> {
