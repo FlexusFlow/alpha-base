@@ -2,6 +2,7 @@ from collections.abc import AsyncGenerator
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from supabase import Client
 
 from app.config import Settings
 from app.models.chat import ChatMessage
@@ -17,8 +18,9 @@ Context:
 
 
 class ChatService:
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Settings, supabase: Client | None = None):
         self.settings = settings
+        self.supabase = supabase
         self.vectorstore = VectorStoreService(settings)
         self.llm = ChatOpenAI(
             model=settings.chat_model,
@@ -27,12 +29,25 @@ class ChatService:
             streaming=True,
         )
 
-    async def _retrieve_context(self, query: str) -> tuple[str, list[str]]:
+    async def _retrieve_context(self, query: str, user_id: str | None = None) -> tuple[str, list[str]]:
         """Retrieve relevant context from the vector store with score filtering."""
+        # Check if Deep Memory is enabled for this user
+        deep_memory = False
+        if user_id and self.supabase:
+            try:
+                settings_result = self.supabase.table("deep_memory_settings").select(
+                    "enabled"
+                ).eq("user_id", user_id).execute()
+                if settings_result.data:
+                    deep_memory = settings_result.data[0]["enabled"]
+            except Exception:
+                pass  # Fallback to standard search
+
         results = await self.vectorstore.similarity_search(
             query=query,
             k=self.settings.rag_retrieval_k,
             score_threshold=self.settings.rag_score_threshold,
+            deep_memory=deep_memory,
         )
 
         if not results:
@@ -71,10 +86,10 @@ class ChatService:
         return messages
 
     async def stream(
-        self, message: str, history: list[ChatMessage]
+        self, message: str, history: list[ChatMessage], user_id: str | None = None
     ) -> AsyncGenerator[dict, None]:
         """Stream the RAG response. Yields dicts with 'token' or 'done' keys."""
-        context, sources = await self._retrieve_context(message)
+        context, sources = await self._retrieve_context(message, user_id=user_id)
         messages = self._build_messages(context, history, message)
 
         full_response = ""

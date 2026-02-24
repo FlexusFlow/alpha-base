@@ -1,5 +1,13 @@
 # ZipTrader Backlog
 
+## Priority: High
+
+- **FastAPI Auth Middleware (Defense in Depth)** — Backend endpoints accept `user_id` from request body/query params. While Next.js API routes inject the authenticated user's ID, the FastAPI endpoints themselves are unauthenticated — any direct caller can pass any `user_id` and access another user's data (Supabase service-role client bypasses RLS). Add JWT validation middleware to FastAPI that extracts `user_id` from the Supabase access token. Affects all existing routers (`chat`, `knowledge`, `youtube`, `articles`, `deep_memory`). Discovered during ZIP-004 PR review.
+
+## Priority: RAG Quality
+
+- **Deep Memory for RAG Accuracy (+22%)** — Train Deep Lake's Deep Memory feature on ZipTrader's dataset to boost retrieval accuracy by up to 22%. Trains a lightweight transformation layer on top of existing embeddings, adapting them to financial/trading domain. Steps: (1) generate question-chunk pairs from existing transcripts via LLM, (2) `db.deep_memory.train(queries, relevance)`, (3) enable `deep_memory=True` on search. Requires Cloud DeepLake migration first. Especially valuable for trading jargon, ticker symbols, and domain-specific terminology that generic embeddings handle poorly. See technote: `.technotes/deep-memory-rag-accuracy.md`
+
 ## Existing Ideas
 
 - Add the ability to view the transcript of transcribed videos.
@@ -8,7 +16,7 @@
 
 - **Article/Web Content Ingestion** — Extend knowledge base beyond YouTube to web articles, blog posts, and documentation. URL scraping + file upload (PDF, markdown). "Add Article" button (AB-0027) and dropzone (AB-0037) already exist.
 - **Temperature 0 for Factual Mode** — "Factual Mode" toggle in the chat UI that drops temperature to 0 for deterministic, fact-grounded, citation-backed answers vs. creative analysis.
-- **Multi-Source Context Attribution** — Once articles are added alongside transcripts, RAG responses should clearly distinguish which source type each chunk came from (video transcript vs. article) with links to the original.
+- **Multi-Source Context Attribution** — RAG responses should return structured `{"answer": "...", "sources": [...]}` format with clickable links to originals. Every chunk must carry `source` metadata (video URL+timestamp for transcripts, article URL for web content, source_type for filtering). UI renders sources as clickable references under each answer. Pattern validated by RetrievalQAWithSourcesChain approach. See technote: `.technotes/qa-chatbot-with-sources.md`
 - **Cloud DeepLake Migration** — Migrate from local DeepLake to Activeloop Cloud (migration path documented in AB-0069). Enables persistent, shared vector stores and better scalability. Deep Lake 3.71+ includes HNSW index for sub-second ANN search at scale (35M+ embeddings) and is ~80% cheaper than Pinecone/Qdrant/Weaviate.
 - **Custom Chunking Strategies per Source Type** — Articles have headings/paragraphs; transcripts are continuous speech. Use source-aware splitting (e.g., HTMLHeaderTextSplitter for articles, RecursiveCharacterTextSplitter for transcripts).
 
@@ -29,6 +37,10 @@ https://learn.activeloop.ai/courses/take/langchain/multimedia/46318140-creating-
 - **Voice Input in Chat (Microphone Button)** — Add a microphone button to ChatWindow. Use browser Web Speech API (free, no backend) to transcribe user's voice into text, then send to existing RAG pipeline. Lowest effort, highest ROI first step toward voice.
 - **Text-to-Speech Responses** — Озвучивание ответов RAG-чата через OpenAI TTS API или ElevenLabs. Полезно для мобильного сценария — слушать саммари/ответы на ходу. Add a "play" button next to each assistant message.
 - **Full Voice Mode** — Combine voice input + TTS output for a hands-free "Jarvis for trader" experience. Speak a question about the market → get a spoken answer grounded in the knowledge base.
+
+## From: Chat History Management Review
+
+- **Server-Side Chat History with Trimming** — Current chat sends unbounded conversation history from frontend on every request. Migrate to server-side history: backend loads recent messages from Supabase `chat_messages` table, applies sliding window (last N turns) or token-budget trimming before sending to LLM. Frontend sends only `project_id` + `message`, no history payload. Reduces request size, centralizes history policy, prevents context window overflow. See technote: `.technotes/chat-history-management.md`
 
 ## From: Self-Critique Chain Article
 

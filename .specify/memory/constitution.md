@@ -49,7 +49,7 @@ Long-running operations (video transcription, vectorization) MUST:
 | Package manager (Python) | uv | |
 | Package manager (JS) | yarn | |
 | Database | Supabase (PostgreSQL) | With RLS |
-| Vector store | DeepLake | Via langchain |
+| Vector store | DeepLake Cloud | Via langchain-deeplake, Managed Tensor DB |
 | Transcription | youtube-transcript-api | yt-dlp as fallback |
 | LLM (RAG chat) | OpenAI (gpt-4o) | For knowledge base RAG chat |
 | LLM (article features) | Anthropic Claude (Haiku/Sonnet) | For article summarization & Q&A |
@@ -69,8 +69,9 @@ Long-running operations (video transcription, vectorization) MUST:
 - All PRs MUST be reviewed against these principles.
 - When a principle conflicts with shipping speed, document the trade-off explicitly in the PR description.
 
-**Version**: 1.2.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-22
+**Version**: 1.3.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-23
 
 ### Amendment Log
+- **1.3.0** (2026-02-23): Updated DeepLake to Cloud Managed Tensor Database for Deep Memory support (ZIP-004).
 - **1.2.0** (2026-02-22): Added Anthropic Claude (Haiku/Sonnet) as approved LLM for article summarization and Q&A (ZIP-003).
 - **1.1.0** (2026-02-17): Fixed Tailwind CSS v4→v3 and npm→yarn to match actual project setup.

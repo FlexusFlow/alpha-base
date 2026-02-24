@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     chat_max_tokens: int = 2048
     rag_retrieval_k: int = 5
     rag_score_threshold: float = 0.3
+    activeloop_token: str = ""
+    deep_memory_generation_model: str = "gpt-4o"
+    deep_memory_target_questions_per_chunk: int = 4
+    deep_memory_max_pairs: int = 5000
+    deep_memory_generation_delay: float = 1.0
 
     model_config = SettingsConfigDict(
         env_file=".env",

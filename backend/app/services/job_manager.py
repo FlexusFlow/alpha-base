@@ -16,17 +16,19 @@ class Job:
     succeeded_videos: list[str] = field(default_factory=list)
     message: str = ""
     channel_id: str = ""
+    extra: dict = field(default_factory=dict)
 
     @property
     def progress(self) -> int:
         if self.total_videos == 0:
-            return 0
+            return self.extra.get("progress", 0)
         return int((self.processed_videos / self.total_videos) * 100)
 
     def to_dict(self) -> dict:
         d = asdict(self)
         d["progress"] = self.progress
         d["status"] = self.status.value
+        d.update(self.extra)
         return d
 
     def to_json(self) -> str:
