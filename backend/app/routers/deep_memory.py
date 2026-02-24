@@ -6,10 +6,14 @@ from supabase import Client
 
 from app.config import Settings
 from app.dependencies import get_job_manager, get_settings, get_supabase
+from fastapi.responses import JSONResponse
+
 from app.models.deep_memory import (
     DeepMemorySettingsResponse,
     GenerateRequest,
     GenerateResponse,
+    ProceedRequest,
+    ProceedResponse,
     SamplePair,
     TrainRequest,
     TrainResponse,
@@ -35,6 +39,24 @@ async def start_generation(
     supabase: Client = Depends(get_supabase),
 ):
     """Start training data generation from existing transcript chunks."""
+    # Block if any non-completed run exists
+    blocking_result = supabase.table("deep_memory_training_runs").select(
+        "id, status"
+    ).eq("user_id", request.user_id).neq(
+        "status", "completed"
+    ).limit(1).execute()
+
+    if blocking_result.data:
+        blocking_run = blocking_result.data[0]
+        return JSONResponse(
+            status_code=409,
+            content={
+                "detail": "Cannot start new generation: an unfinished training run exists",
+                "blocking_run_id": str(blocking_run["id"]),
+                "blocking_run_status": blocking_run["status"],
+            },
+        )
+
     vectorstore = VectorStoreService(settings)
     chunks = await asyncio.to_thread(vectorstore.get_all_chunk_ids_and_texts)
     total_chunks = len(chunks)
@@ -114,6 +136,68 @@ async def start_training(
     )
 
 
+@router.post("/proceed", response_model=ProceedResponse, status_code=202)
+async def proceed_failed_run(
+    request: ProceedRequest,
+    background_tasks: BackgroundTasks,
+    job_manager: JobManager = Depends(get_job_manager),
+    settings: Settings = Depends(get_settings),
+    supabase: Client = Depends(get_supabase),
+):
+    """Resume a failed generation or training run from the point of failure."""
+    run_result = supabase.table("deep_memory_training_runs").select("*").eq(
+        "id", request.training_run_id
+    ).eq("user_id", request.user_id).execute()
+
+    if not run_result.data:
+        raise HTTPException(status_code=404, detail="Training run not found")
+
+    run = run_result.data[0]
+    if run["status"] not in ("generating_failed", "training_failed"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Training run must be in a failed status, currently '{run['status']}'",
+        )
+
+    original_status = run["status"]
+
+    # Clear error and reset status
+    new_status = "generating" if original_status == "generating_failed" else "training"
+    supabase.table("deep_memory_training_runs").update({
+        "status": new_status,
+        "error_message": None,
+    }).eq("id", request.training_run_id).execute()
+
+    job = job_manager.create_job(total_videos=0)
+
+    if original_status == "generating_failed":
+        background_tasks.add_task(
+            generate_training_data,
+            training_run_id=request.training_run_id,
+            job_id=job.id,
+            job_manager=job_manager,
+            settings=settings,
+            supabase=supabase,
+        )
+        message = "Resuming training data generation"
+    else:
+        background_tasks.add_task(
+            train_deep_memory,
+            training_run_id=request.training_run_id,
+            job_id=job.id,
+            job_manager=job_manager,
+            settings=settings,
+            supabase=supabase,
+        )
+        message = "Resuming Deep Memory training"
+
+    return ProceedResponse(
+        job_id=job.id,
+        training_run_id=request.training_run_id,
+        message=message,
+    )
+
+
 @router.get("/runs", response_model=TrainingRunListResponse)
 async def list_training_runs(
     user_id: str,
@@ -129,6 +213,9 @@ async def list_training_runs(
             id=r["id"],
             status=r["status"],
             pair_count=r["pair_count"],
+            processed_chunks=r.get("processed_chunks") or 0,
+            total_chunks=r.get("total_chunks") or 0,
+            error_message=r.get("error_message"),
             metrics=r.get("metrics") or {},
             started_at=r["started_at"],
             completed_at=r.get("completed_at"),
@@ -195,6 +282,44 @@ async def get_training_run(
     )
 
 
+@router.delete("/runs/{run_id}")
+async def delete_training_run(
+    run_id: str,
+    user_id: str,
+    supabase: Client = Depends(get_supabase),
+):
+    """Delete a failed training run and its associated training pairs."""
+    run_result = supabase.table("deep_memory_training_runs").select("*").eq(
+        "id", run_id
+    ).eq("user_id", user_id).execute()
+
+    if not run_result.data:
+        raise HTTPException(status_code=404, detail="Training run not found")
+
+    run = run_result.data[0]
+    if run["status"] not in ("generating_failed", "training_failed"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only failed runs can be deleted",
+        )
+
+    # Count pairs before deletion (CASCADE will remove them)
+    pairs_result = supabase.table("deep_memory_training_pairs").select(
+        "id", count="exact"
+    ).eq("training_run_id", run_id).execute()
+    pair_count = pairs_result.count or 0
+
+    # Delete the run (CASCADE removes pairs)
+    supabase.table("deep_memory_training_runs").delete().eq(
+        "id", run_id
+    ).eq("user_id", user_id).execute()
+
+    return {
+        "message": f"Deleted training run and {pair_count} associated pairs",
+        "deleted_pairs": pair_count,
+    }
+
+
 @router.get("/settings", response_model=DeepMemorySettingsResponse)
 async def get_settings_endpoint(
     user_id: str,
@@ -206,6 +331,17 @@ async def get_settings_endpoint(
         "user_id", user_id
     ).execute()
 
+    # Check for any non-completed runs that block new generation
+    blocking_result = supabase.table("deep_memory_training_runs").select(
+        "id, status"
+    ).eq("user_id", user_id).neq(
+        "status", "completed"
+    ).limit(1).execute()
+
+    has_blocking_run = bool(blocking_result.data)
+    blocking_run_id = blocking_result.data[0]["id"] if blocking_result.data else None
+    blocking_run_status = blocking_result.data[0]["status"] if blocking_result.data else None
+
     # Check if any completed training run exists
     completed_result = supabase.table("deep_memory_training_runs").select(
         "id", count="exact"
@@ -214,6 +350,7 @@ async def get_settings_endpoint(
 
     # Get total chunks from vector store (lightweight count, no text loading)
     vectorstore = VectorStoreService(settings)
+    is_cloud = vectorstore._is_cloud
     total_chunks = await asyncio.to_thread(vectorstore.get_chunk_count)
 
     # Get trained chunk count from last completed run
@@ -242,6 +379,10 @@ async def get_settings_endpoint(
             can_enable=can_enable,
             total_chunks=total_chunks,
             trained_chunk_count=trained_chunk_count,
+            has_blocking_run=has_blocking_run,
+            blocking_run_id=blocking_run_id,
+            blocking_run_status=blocking_run_status,
+            is_cloud=is_cloud,
         )
 
     return DeepMemorySettingsResponse(
@@ -251,6 +392,10 @@ async def get_settings_endpoint(
         can_enable=can_enable,
         total_chunks=total_chunks,
         trained_chunk_count=0,
+        has_blocking_run=has_blocking_run,
+        blocking_run_id=blocking_run_id,
+        blocking_run_status=blocking_run_status,
+        is_cloud=is_cloud,
     )
 
 

@@ -83,8 +83,8 @@ async def generate_training_data(
         skip_ids = current_run_chunk_ids | previously_trained_chunk_ids
         unprocessed = [c for c in chunks if c["id"] not in skip_ids]
 
-        total_chunks = len(unprocessed)  # Only count new chunks
         already_processed = len(current_run_chunk_ids)
+        total_chunks = len(unprocessed) + already_processed  # Full run total for correct progress labels
 
         # Update run with total count
         supabase.table("deep_memory_training_runs").update({
@@ -189,7 +189,7 @@ async def generate_training_data(
     except Exception as e:
         logger.error(f"Training data generation failed: {traceback.format_exc()}")
         supabase.table("deep_memory_training_runs").update({
-            "status": "failed",
+            "status": "generating_failed",
             "error_message": str(e)[:500],
         }).eq("id", training_run_id).execute()
 
@@ -197,7 +197,7 @@ async def generate_training_data(
             job_id,
             status=JobStatus.FAILED,
             message=f"Generation failed: {e}",
-            extra={"status": "failed", "error_message": str(e)[:500]},
+            extra={"status": "generating_failed", "error_message": str(e)[:500]},
         )
 
 

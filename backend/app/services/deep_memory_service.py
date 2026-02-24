@@ -206,7 +206,7 @@ async def train_deep_memory(
     except Exception as e:
         logger.error(f"Deep Memory training failed: {traceback.format_exc()}")
         supabase.table("deep_memory_training_runs").update({
-            "status": "failed",
+            "status": "training_failed",
             "error_message": str(e)[:500],
         }).eq("id", training_run_id).execute()
 
@@ -214,5 +214,5 @@ async def train_deep_memory(
             job_id,
             status=JobStatus.FAILED,
             message=f"Training failed: {e}",
-            extra={"status": "failed", "error_message": str(e)[:500]},
+            extra={"status": "training_failed", "error_message": str(e)[:500]},
         )
