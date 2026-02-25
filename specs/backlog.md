@@ -1,4 +1,4 @@
-# ZipTrader Backlog
+# AlphaBase Backlog
 
 ## Priority: High
 
@@ -6,7 +6,7 @@
 
 ## Priority: RAG Quality
 
-- **Deep Memory for RAG Accuracy (+22%)** — Train Deep Lake's Deep Memory feature on ZipTrader's dataset to boost retrieval accuracy by up to 22%. Trains a lightweight transformation layer on top of existing embeddings, adapting them to financial/trading domain. Steps: (1) generate question-chunk pairs from existing transcripts via LLM, (2) `db.deep_memory.train(queries, relevance)`, (3) enable `deep_memory=True` on search. Requires Cloud DeepLake migration first. Especially valuable for trading jargon, ticker symbols, and domain-specific terminology that generic embeddings handle poorly. See technote: `.technotes/deep-memory-rag-accuracy.md`
+- **Deep Memory for RAG Accuracy (+22%)** — Train Deep Lake's Deep Memory feature on AlphaBase's dataset to boost retrieval accuracy by up to 22%. Trains a lightweight transformation layer on top of existing embeddings, adapting them to financial/trading domain. Steps: (1) generate question-chunk pairs from existing transcripts via LLM, (2) `db.deep_memory.train(queries, relevance)`, (3) enable `deep_memory=True` on search. Requires Cloud DeepLake migration first. Especially valuable for trading jargon, ticker symbols, and domain-specific terminology that generic embeddings handle poorly. See technote: `.technotes/deep-memory-rag-accuracy.md`
 
 ## Existing Ideas
 

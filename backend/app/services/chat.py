@@ -8,8 +8,8 @@ from app.config import Settings
 from app.models.chat import ChatMessage
 from app.services.vectorstore import VectorStoreService
 
-SYSTEM_PROMPT = """You are a helpful AI assistant for ZipTrader knowledge base about stock market investing and trading.
-Use ONLY the provided context from transcribed YouTube videos to answer questions accurately.
+SYSTEM_PROMPT = """You are a helpful AI assistant for AlphaBase knowledge base.
+Use ONLY the provided context from transcribed YouTube videos and articles to answer questions accurately.
 
 If the context doesn't contain relevant information about the user's question:
 1. Clearly state: "I don't have information about [topic] in my knowledge base."

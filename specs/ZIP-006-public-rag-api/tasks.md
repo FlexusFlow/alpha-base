@@ -219,13 +219,13 @@
 
 **Goal**: Create ClawHub skill file for AI assistant integration.
 
-- [x] T016 [US6] Create skill file `skill/ziptrader-rag.md`
+- [x] T016 [US6] Create skill file `skill/alphabase-rag.md`
   - ~30-40 lines markdown
   - **Sections**:
-    1. **Description**: "Query ZipTrader's knowledge base on trading and investing, sourced from transcribed YouTube videos"
-    2. **When to Use**: "When user asks about trading strategies, stock analysis, investing advice, or explicitly requests ZipTrader. When you need domain expertise on trading topics."
+    1. **Description**: "Query AlphaBase's knowledge base on trading and investing, sourced from transcribed YouTube videos"
+    2. **When to Use**: "When user asks about trading strategies, stock analysis, investing advice, or explicitly requests AlphaBase. When you need domain expertise on trading topics."
     3. **API Endpoint**: `POST https://<domain>/v1/api/public/query`
-    4. **Authentication**: `Authorization: Bearer <api_key>` header. If user doesn't have a key, guide them to create one in ZipTrader dashboard.
+    4. **Authentication**: `Authorization: Bearer <api_key>` header. If user doesn't have a key, guide them to create one in AlphaBase dashboard.
     5. **Request Format**:
        ```json
        {
@@ -237,7 +237,7 @@
     6. **Response Format**:
        ```json
        {
-         "answer": "Based on ZipTrader videos...",
+         "answer": "Based on AlphaBase videos...",
          "sources": ["Video: ... (Chunk 5)", ...]
        }
        ```

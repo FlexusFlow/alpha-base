@@ -5,7 +5,7 @@
 
 ## Summary
 
-Migrate the cookie management system from medium-legal-scrapper to ZipTrader. This is a frontend-only feature (Next.js API routes + Supabase) enabling users to upload, view, and delete browser cookie JSON files. Key additions beyond the source: domain normalization (www. stripping), cookie expiration detection with visual indicators, and a 50-cookie-per-user limit with cleanup guidance.
+Migrate the cookie management system from medium-legal-scrapper to AlphaBase. This is a frontend-only feature (Next.js API routes + Supabase) enabling users to upload, view, and delete browser cookie JSON files. Key additions beyond the source: domain normalization (www. stripping), cookie expiration detection with visual indicators, and a 50-cookie-per-user limit with cleanup guidance.
 
 ## Technical Context
 

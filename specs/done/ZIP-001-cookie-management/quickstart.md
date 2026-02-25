@@ -4,7 +4,7 @@
 
 ## Prerequisites
 
-1. ZipTrader dev environment running (`next-frontend` + Supabase)
+1. AlphaBase dev environment running (`next-frontend` + Supabase)
 2. Supabase project with auth configured
 
 ## Database Setup (One-time)

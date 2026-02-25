@@ -7,7 +7,7 @@ from app.routers import api_keys, articles, chat, deep_memory, events, knowledge
 
 def create_app() -> FastAPI:
     settings = Settings()
-    app = FastAPI(title="ZipTrader Knowledge Base", version="0.1.0")
+    app = FastAPI(title="AlphaBase Knowledge Base", version="0.1.0")
 
     app.add_middleware(
         CORSMiddleware,

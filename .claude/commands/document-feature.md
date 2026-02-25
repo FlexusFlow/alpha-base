@@ -1,5 +1,5 @@
 ---
-description: Document an implemented feature in two places — technical tracking in specs/implemented-features.md and business-friendly marketing in .marketing/ZipTrader-Assistant.md.
+description: Document an implemented feature in two places — technical tracking in specs/implemented-features.md and business-friendly marketing in .marketing/AlphaBase.md.
 ---
 
 ## User Input
@@ -17,14 +17,14 @@ This skill writes to **two separate files** with different audiences and purpose
 | File | Audience | Purpose | Style |
 |------|----------|---------|-------|
 | `specs/implemented-features.md` | Developers, internal team | Track what was built and how | Technical, concise, includes feature IDs |
-| `.marketing/ZipTrader-Assistant.md` | Sales, product owners, clients | Present product capabilities | Business-friendly, no jargon, no IDs |
+| `.marketing/AlphaBase.md` | Sales, product owners, clients | Present product capabilities | Business-friendly, no jargon, no IDs |
 
 ## Flag Detection
 
 Parse `$ARGUMENTS` for flags:
 
 - **`--force`**: Run autonomously. Make all decisions yourself. Do not ask clarification questions.
-- **`--init`**: First-time generation of `.marketing/ZipTrader-Assistant.md` only. Builds the **entire** marketing doc from scratch by transforming ALL existing features from `specs/implemented-features.md`. Does NOT modify `implemented-features.md`.
+- **`--init`**: First-time generation of `.marketing/AlphaBase.md` only. Builds the **entire** marketing doc from scratch by transforming ALL existing features from `specs/implemented-features.md`. Does NOT modify `implemented-features.md`.
 
 Strip flags from `$ARGUMENTS` before processing the remaining text as feature description/identifier.
 
@@ -34,7 +34,7 @@ If no flags are present: You MAY ask up to 3 clarification questions using `AskU
 
 Before any work:
 
-1. Check if `.marketing/ZipTrader-Assistant.md` exists
+1. Check if `.marketing/AlphaBase.md` exists
 2. **If it does NOT exist and `--init` is NOT set**: Create the file with the document skeleton (see [Marketing Document Structure](#marketing-document-structure)) then proceed normally
 3. **If it does NOT exist and `--init` IS set**: Create the file and proceed with init mode
 4. **If it exists**: Read it to understand current content before appending
@@ -43,7 +43,7 @@ Before any work:
 
 ## Init Mode (`--init`)
 
-This mode ONLY generates `.marketing/ZipTrader-Assistant.md`. It does NOT touch `specs/implemented-features.md`.
+This mode ONLY generates `.marketing/AlphaBase.md`. It does NOT touch `specs/implemented-features.md`.
 
 1. Read `specs/implemented-features.md` — the complete feature history
 2. Read `.claude/plans/sales-brief.md` — for product positioning and tone
@@ -56,7 +56,7 @@ This mode ONLY generates `.marketing/ZipTrader-Assistant.md`. It does NOT touch 
      - **Knowledge Base Management** — channel organization, deletion, caching
      - **Cookie Management** — authentication cookie support for restricted content
    - Each group gets a `### Heading` with business-friendly bullets underneath
-5. Write the **complete** `.marketing/ZipTrader-Assistant.md` using the marketing document structure
+5. Write the **complete** `.marketing/AlphaBase.md` using the marketing document structure
 6. Include Platform Summary sourced from sales-brief.md
 7. Include Planned Capabilities from the "Planned" section of implemented-features.md
 8. If not `--force`: present draft for approval before writing
@@ -92,7 +92,7 @@ b. **Git history** (for features already merged or in progress):
 
 c. **Existing docs**:
    - Read `specs/implemented-features.md` for current format, stage numbering, and writing style
-   - Read `.marketing/ZipTrader-Assistant.md` for current marketing content and groupings
+   - Read `.marketing/AlphaBase.md` for current marketing content and groupings
    - Read `.claude/plans/sales-brief.md` for tone reference
 
 ### 3. Draft Both Entries
@@ -145,12 +145,12 @@ Follow the existing format exactly:
 
 ---
 
-## File 2: `.marketing/ZipTrader-Assistant.md` (Business Documentation)
+## File 2: `.marketing/AlphaBase.md` (Business Documentation)
 
 ### Marketing Document Structure
 
 ```markdown
-# ZipTrader Platform — Feature Overview
+# AlphaBase Platform — Feature Overview
 
 > Business documentation for sales, product, and stakeholder audiences.
 > Auto-generated from project artifacts. Review and adjust wording as needed.
@@ -159,7 +159,7 @@ Follow the existing format exactly:
 
 ## Platform Summary
 
-[2-3 paragraph overview of what ZipTrader is, who it's for, and the core value proposition. Sourced from `.claude/plans/sales-brief.md`.]
+[2-3 paragraph overview of what AlphaBase is, who it's for, and the core value proposition. Sourced from `.claude/plans/sales-brief.md`.]
 
 ---
 
@@ -187,7 +187,7 @@ Follow the existing format exactly:
 
 ### Determine Placement
 
-- Read the existing feature groups in `.marketing/ZipTrader-Assistant.md`
+- Read the existing feature groups in `.marketing/AlphaBase.md`
 - Decide if the new feature fits into an **existing group** or needs a **new group**
 - If unclear, ask the user (unless `--force`, then make the best decision)
 
@@ -215,7 +215,7 @@ Follow the existing format exactly:
 - ZIP-003 Article vector ingestion — Articles chunked and embedded into DeepLake alongside video transcripts, unified retrieval in RAG queries
 ```
 
-### Marketing entry (ZipTrader-Assistant.md) — Good
+### Marketing entry (AlphaBase.md) — Good
 
 ```markdown
 ### Article Knowledge Import

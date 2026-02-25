@@ -3,7 +3,7 @@
 **Feature Branch**: `feature/ZIP-001-cookie-management`
 **Created**: 2026-02-17
 **Status**: Draft
-**Input**: Migrate cookie management functionality from medium-legal-scrapper project to ZipTrader — enabling users to upload, list, and delete browser cookie JSON files stored in Supabase for accessing paywalled content during scraping.
+**Input**: Migrate cookie management functionality from medium-legal-scrapper project to AlphaBase — enabling users to upload, list, and delete browser cookie JSON files stored in Supabase for accessing paywalled content during scraping.
 
 ## Clarifications
 
@@ -123,7 +123,7 @@ A user clicks the "Cookies" link in the dashboard sidebar and is taken to the Co
 ## Assumptions
 
 - Cookie files follow the naming convention `<domain>.cookies.json` (e.g., `youtube.com.cookies.json`).
-- The existing Supabase infrastructure (auth, storage, database) used by ZipTrader is available and configured.
+- The existing Supabase infrastructure (auth, storage, database) used by AlphaBase is available and configured.
 - A cookie warning modal component will be created as a security warning (informing users that cookie files contain sensitive authentication tokens and should be handled with care), not wired to any consumer in this feature but ready for future scraping flow integration. Cookie deletion itself requires no confirmation.
 - No new frontend dependencies are required; all necessary UI components and icons are already available.
 - Cookie files are small (typically under 1 MB) so no chunked upload or progress tracking is needed.

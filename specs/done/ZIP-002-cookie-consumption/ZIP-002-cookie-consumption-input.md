@@ -25,7 +25,7 @@ The `medium-legal-scrapper` project implements this pattern in its `/app/api/scr
 5. Parse blob to JSON: `JSON.parse(await fileData.text())` → `CookieEntry[]`
 6. Inject cookies into Playwright browser context: `context.addCookies(cookies)`
 
-The ZipTrader backend should implement the equivalent in Python, fetching from Supabase Storage using the **service role key** (backend bypasses RLS per the constitution).
+The AlphaBase backend should implement the equivalent in Python, fetching from Supabase Storage using the **service role key** (backend bypasses RLS per the constitution).
 
 ## Existing Infrastructure
 
