@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Cloud DeepLake migration completed (dataset at `hub://org_id/ziptrader-kb`)
+- Cloud DeepLake migration completed (dataset at `hub://org_id/alphabase-kb`)
 - Activeloop API token configured
 - Existing transcript chunks in the vector store
 - Backend and frontend running

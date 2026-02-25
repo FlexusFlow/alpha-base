@@ -39,7 +39,7 @@ Stores API keys for public RAG API access. Keys are hashed for security.
 - `own_keys_update`: Users can UPDATE only their own keys
 - `own_keys_delete`: Users can DELETE only their own keys
 
-**Key Format**: `zt_{secrets.token_urlsafe(32)}` — 44+ characters total. The `zt_` prefix identifies ZipTrader keys.
+**Key Format**: `zt_{secrets.token_urlsafe(32)}` — 44+ characters total. The `zt_` prefix identifies AlphaBase keys.
 
 **Security Note**: The full key is NEVER stored. Only the SHA-256 hash (`key_hash`) and the prefix (`key_prefix`) are persisted.
 

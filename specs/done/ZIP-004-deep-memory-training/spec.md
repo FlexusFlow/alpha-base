@@ -7,13 +7,13 @@
 
 ## Overview
 
-Train Deep Lake's Deep Memory feature on ZipTrader's existing YouTube transcript dataset to significantly improve retrieval accuracy for the Knowledge Base RAG chat. Deep Memory learns a lightweight transformation layer on top of existing embeddings, adapting the vector space to the financial/trading domain without changing the underlying embedding model.
+Train Deep Lake's Deep Memory feature on AlphaBase's existing YouTube transcript dataset to significantly improve retrieval accuracy for the Knowledge Base RAG chat. Deep Memory learns a lightweight transformation layer on top of existing embeddings, adapting the vector space to the financial/trading domain without changing the underlying embedding model.
 
 This is especially valuable for trading-specific terminology (ticker symbols like AAPL, TSLA), financial jargon ("put spread", "iron condor", "RSI divergence"), and domain-specific concepts that generic embeddings handle poorly — leading to irrelevant chunks being retrieved and lower-quality AI responses.
 
 ## Problem Statement
 
-ZipTrader's Knowledge Base RAG chat uses generic OpenAI embeddings (text-embedding-3-small) that are not optimized for the financial/trading domain. This causes:
+AlphaBase's Knowledge Base RAG chat uses generic OpenAI embeddings (text-embedding-3-small) that are not optimized for the financial/trading domain. This causes:
 
 - **Retrieval misses**: When users ask about specific trading strategies, tickers, or financial concepts, the system retrieves tangentially related chunks instead of the most relevant ones
 - **Domain vocabulary gaps**: Generic embeddings treat "iron condor" as two unrelated words rather than a specific options strategy, and cannot distinguish between "AAPL earnings call" and "apple fruit discussion"

@@ -45,7 +45,7 @@ cd next-frontend && yarn dev
 - `next-frontend/lib/api/api-keys.ts` — API client functions for key operations
 
 ### Other
-- `skill/ziptrader-rag.md` — ClawHub skill file for AI assistant integration
+- `skill/alphabase-rag.md` — ClawHub skill file for AI assistant integration
 
 ## Files to Modify
 
@@ -90,7 +90,7 @@ curl -X POST http://localhost:8000/v1/api/public/query \
 10. Create API client functions (lib/api/api-keys.ts)
 11. Create API Keys page (app/dashboard/api-keys/page.tsx)
 12. Update sidebar (app-sidebar.tsx)
-13. Create ClawHub skill file (skill/ziptrader-rag.md)
+13. Create ClawHub skill file (skill/alphabase-rag.md)
 14. Write backend tests
 15. Manual testing with cURL and ClawHub (if available)
 

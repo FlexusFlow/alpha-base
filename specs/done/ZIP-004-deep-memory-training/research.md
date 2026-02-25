@@ -71,7 +71,7 @@ job_id = db.vectorstore.deep_memory.train(
 **Decision**: Update `Settings` to support both local and cloud DeepLake paths.
 
 **Required config changes**:
-- `deeplake_path`: Change from `./knowledge_base/deeplake_store` to `hub://org_id/ziptrader-kb`
+- `deeplake_path`: Change from `./knowledge_base/deeplake_store` to `hub://org_id/alphabase-kb`
 - New: `activeloop_token` — Activeloop API token
 - New: `deep_memory_enabled` — boolean flag for search toggle
 - `runtime={"tensor_db": True}` must be set when connecting

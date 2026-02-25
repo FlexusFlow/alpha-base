@@ -1,6 +1,6 @@
 # Article Scraping Migration Context
 
-This document provides full context for migrating article scraping functionality from `medium-legal-scrapper` to `ziptrader/next-frontend`. Use this as input to `/speckit.specify`.
+This document provides full context for migrating article scraping functionality from `medium-legal-scrapper` to `alphabase/next-frontend`. Use this as input to `/speckit.specify`.
 
 ---
 

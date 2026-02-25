@@ -36,7 +36,7 @@
 
 ## Decision 4: Cookie Warning Modal — Dialog vs AlertDialog
 
-**Decision**: Convert source's `Dialog` component to `AlertDialog` since ZipTrader has `alert-dialog.tsx` in its UI components but not `dialog.tsx`.
+**Decision**: Convert source's `Dialog` component to `AlertDialog` since AlphaBase has `alert-dialog.tsx` in its UI components but not `dialog.tsx`.
 
 **Rationale**: AlertDialog provides the same modal UX with built-in accessibility for warning/confirmation patterns. The component maps cleanly: Dialog → AlertDialog, DialogContent → AlertDialogContent, etc.
 

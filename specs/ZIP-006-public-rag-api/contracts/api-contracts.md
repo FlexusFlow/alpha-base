@@ -95,7 +95,7 @@ Revoke (deactivate) an API key.
 
 ### POST /v1/api/public/query
 
-Query the ZipTrader RAG system with an API key.
+Query the AlphaBase RAG system with an API key.
 
 **Authentication**: `Authorization: Bearer zt_<api_key>`
 
@@ -120,7 +120,7 @@ Query the ZipTrader RAG system with an API key.
 **Response** (200 OK):
 ```json
 {
-  "answer": "Based on the ZipTrader videos, beginners should start with...",
+  "answer": "Based on the AlphaBase videos, beginners should start with...",
   "sources": [
     "Video: Trading Strategies 101 (Chunk 5)",
     "Video: Risk Management for New Traders (Chunk 12)"

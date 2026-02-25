@@ -1,4 +1,4 @@
-# ziptrader
+# alphabase
 
 Full-stack YouTube knowledge base app. All rules live in `.claude/rules/`.
 
@@ -9,7 +9,7 @@ Full-stack YouTube knowledge base app. All rules live in `.claude/rules/`.
 
 When an external article or technology is reviewed and a decision is made (adopt, reject, or defer), create a technote in `.technotes/`:
 - Summarize the article/technology
-- Compare with ZipTrader's current approach
+- Compare with AlphaBase's current approach
 - Document **why** a particular option was chosen or rejected
 - If something is added to `specs/backlog.md`, reference the corresponding technote
 
@@ -24,6 +24,9 @@ https://github.com/FlexusFlow/alpha-base/commit/3bee5231bef2feb86b9d83e60d91ea8d
 - DeepLake Cloud (Managed Tensor DB) with Deep Memory for RAG accuracy (ZIP-004)
 - LangChain + langchain-deeplake for vector store operations
 
+## Known Limitations
+- The DeepLake vector store is shared across all users — not isolated per user. Per-user knowledge base splitting is in the backlog (project was originally built for a single client).
+
 ## Before SDD approach features
 - see specs/implemented-features.md
 - keep tracking implementations in specs/implemented-features.md like it was done in section
@@ -32,6 +35,8 @@ https://github.com/FlexusFlow/alpha-base/commit/3bee5231bef2feb86b9d83e60d91ea8d
   ```
 
 ## Recent Changes
+- feature/ZIP-006-public-rag-api: Public RAG API with API key management and rate limiting; removed legacy frontend and POC scripts
 - feature/ZIP-005-failed-training-recovery: Phase-specific failure statuses, proceed/remove actions, expandable history rows, cloud-only gate
 - feature/ZIP-004-deep-memory-training: LLM training data generation, DeepLake Deep Memory training, dashboard UI with workflow steps
+- feature/ZIP-003-article-scraping-migration: Article scraping backend (Playwright + markdownify), frontend with viewer, chat, and summary
 - feature/ZIP-001-cookie-management: Added TypeScript (Next.js 15, React 19) + Next.js App Router, shadcn/ui, Supabase JS client, lucide-react

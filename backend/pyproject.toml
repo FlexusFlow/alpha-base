@@ -1,7 +1,7 @@
 [project]
-name = "ziptrader-backend"
+name = "alphabase-backend"
 version = "0.1.0"
-description = "ZipTrader Knowledge Base API"
+description = "AlphaBase Knowledge Base API"
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.0",

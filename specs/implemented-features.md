@@ -1,4 +1,4 @@
-# ZipTrader (AlphaBase) — Implemented Features
+# AlphaBase — Implemented Features
 
 ## Stage 1: Core YouTube Scraping & Knowledge Base Pipeline
 
@@ -66,7 +66,7 @@
 - AB-0050 Chat history persistence — Messages stored in Supabase chat_messages table
 - AB-0051 Chat history loading — Server-side fetch of previous messages when opening a project
 - AB-0052 Source citations — Retrieved context sources returned with each response
-- AB-0053 System prompt with RAG context — ZipTrader-specific system prompt with injected knowledge base context
+- AB-0053 System prompt with RAG context — AlphaBase system prompt with injected knowledge base context
 - AB-0054 Chat UI — ChatWindow component with message bubbles, auto-scroll, streaming display, source links
 
 ## Stage 5: Scrape-Once Caching (BFF Orchestration)

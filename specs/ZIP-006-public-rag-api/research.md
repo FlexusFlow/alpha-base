@@ -7,7 +7,7 @@
 **Rationale**:
 - `secrets.token_urlsafe` provides cryptographically secure random bytes encoded in URL-safe base64
 - 32 bytes → 43 characters after base64 encoding + 3 characters for `zt_` prefix = 46 total
-- The `zt_` prefix makes keys immediately recognizable as ZipTrader keys (useful for support, debugging, and preventing accidental leakage of other service keys)
+- The `zt_` prefix makes keys immediately recognizable as AlphaBase keys (useful for support, debugging, and preventing accidental leakage of other service keys)
 - URL-safe encoding prevents issues with keys being used in URLs or query parameters (though we use headers)
 - Python's `secrets` module is the recommended way to generate tokens for security-sensitive applications
 
@@ -130,8 +130,8 @@
 - No executable code — purely declarative
 
 **Content Requirements**:
-- **Description**: What the skill does (query ZipTrader's YouTube knowledge base)
-- **Trigger conditions**: When to use (trading questions, user explicitly asks for ZipTrader)
+- **Description**: What the skill does (query AlphaBase's YouTube knowledge base)
+- **Trigger conditions**: When to use (trading questions, user explicitly asks for AlphaBase)
 - **API contract**: Endpoint URL, authentication (Bearer token), request body schema, response schema
 - **Error handling**: How to handle 401, 429, 500 errors
 - **AI instructions**: Cite sources in responses, prompt user for API key if missing

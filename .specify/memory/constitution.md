@@ -1,4 +1,4 @@
-# ZipTrader Constitution
+# AlphaBase Constitution
 
 ## Core Principles
 
@@ -63,15 +63,25 @@ Long-running operations (video transcription, vectorization) MUST:
 - **Type checking**: `npx tsc --noEmit` MUST pass before any PR
 - **Spec-Driven Development**: All new features MUST go through the SDD pipeline (specify → plan → tasks → implement). Retroactive specs are written for existing features to establish baseline.
 
+## Known Limitations
+
+- **Shared vector store**: The DeepLake knowledge base is a single shared
+  instance across all users. Any user who adds YouTube channels or articles
+  updates the vector store for everyone. Per-user isolation is deferred to
+  the backlog — the project was originally built for a single client.
+  Metadata in Supabase IS user-scoped (RLS), but the vectorized content
+  in DeepLake is not.
+
 ## Governance
 
 - This constitution supersedes ad-hoc decisions. Amendments require updating this document with version bump and rationale.
 - All PRs MUST be reviewed against these principles.
 - When a principle conflicts with shipping speed, document the trade-off explicitly in the PR description.
 
-**Version**: 1.4.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-24
+**Version**: 1.5.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-25
 
 ### Amendment Log
+- **1.5.0** (2026-02-25): Added Known Limitations section — documented shared DeepLake vector store (not user-isolated); added ZIP-006 public RAG API context.
 - **1.4.0** (2026-02-24): Documented Deep Memory cloud-only requirement — Deep Memory features are gated behind `hub://` DeepLake paths; local vector stores show a warning (ZIP-005).
 - **1.3.0** (2026-02-23): Updated DeepLake to Cloud Managed Tensor Database for Deep Memory support (ZIP-004).
 - **1.2.0** (2026-02-22): Added Anthropic Claude (Haiku/Sonnet) as approved LLM for article summarization and Q&A (ZIP-003).

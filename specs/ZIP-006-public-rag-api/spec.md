@@ -7,7 +7,7 @@
 
 ## Overview
 
-ZipTrader's RAG chat system is currently accessible only through the web dashboard. This limits its utility to manual browsing sessions and prevents integration with external tools, automation workflows, and AI assistants.
+AlphaBase's RAG chat system is currently accessible only through the web dashboard. This limits its utility to manual browsing sessions and prevents integration with external tools, automation workflows, and AI assistants.
 
 This feature exposes the RAG system as a public API with API key authentication, enabling external consumers (AI assistants via ClawHub skills, third-party integrations, automation scripts) to query the knowledge base programmatically without requiring dashboard access. The existing browser-based SSE chat flow remains unchanged.
 
@@ -17,16 +17,16 @@ The current architecture has several limitations:
 
 - **Dashboard-only access**: Users can only query the knowledge base through the web UI, requiring manual interaction
 - **No programmatic access**: External tools and automation workflows cannot leverage the knowledge base
-- **Limited integration**: AI assistants (Claude via ClawHub) cannot access ZipTrader's domain expertise
+- **Limited integration**: AI assistants (Claude via ClawHub) cannot access AlphaBase's domain expertise
 - **Authentication bottleneck**: The only way to access the RAG system is through full user authentication with Supabase session management
 
 ## User Scenarios & Testing
 
 ### Scenario 1: AI Assistant Queries Knowledge Base
 
-**Given** an AI assistant (Claude) with a ClawHub skill configured for ZipTrader
+**Given** an AI assistant (Claude) with a ClawHub skill configured for AlphaBase
 **When** a user asks the assistant a question about trading strategies
-**Then** the assistant invokes the ZipTrader RAG API with the question and includes cited sources in the response
+**Then** the assistant invokes the AlphaBase RAG API with the question and includes cited sources in the response
 
 **Acceptance Criteria**:
 - The AI assistant can authenticate using an API key
@@ -36,7 +36,7 @@ The current architecture has several limitations:
 
 ### Scenario 2: External Integration Access
 
-**Given** a third-party application that wants to integrate ZipTrader knowledge
+**Given** a third-party application that wants to integrate AlphaBase knowledge
 **When** the application sends a REST API request with a valid API key
 **Then** it receives a structured JSON response with the answer and sources
 
@@ -48,7 +48,7 @@ The current architecture has several limitations:
 
 ### Scenario 3: User Creates API Key
 
-**Given** an authenticated user in the ZipTrader dashboard
+**Given** an authenticated user in the AlphaBase dashboard
 **When** the user creates a new API key with a descriptive name
 **Then** the full key is shown once and can be copied, after which only a prefix is displayed
 
@@ -142,7 +142,7 @@ The system must provide a user-friendly interface for API key management:
 
 The system must provide a skill file for AI assistant integration:
 
-1. Create `skill/ziptrader-rag.md` with ~30-40 lines
+1. Create `skill/alphabase-rag.md` with ~30-40 lines
 2. Include: description, when to use, API endpoint URL, authentication pattern, request/response examples, error handling guidance
 3. Provide clear instructions for AI on citing sources and handling missing API keys
 
@@ -168,7 +168,7 @@ The system must provide a skill file for AI assistant integration:
 
 ## Success Criteria
 
-- **SC-1**: External AI assistants can successfully query ZipTrader's knowledge base using API keys with <2 second median response time
+- **SC-1**: External AI assistants can successfully query AlphaBase's knowledge base using API keys with <2 second median response time
 - **SC-2**: API key creation, display, and revocation flow completes in under 30 seconds for users
 - **SC-3**: Rate limiting correctly rejects requests exceeding 60/minute without affecting other users
 - **SC-4**: The public API endpoint coexists with the existing SSE chat without any changes to dashboard chat functionality

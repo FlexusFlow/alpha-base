@@ -7,13 +7,13 @@
 
 ## Overview
 
-Migrate the complete article scraping and AI analysis pipeline from the `medium-legal-scrapper` project into ZipTrader's existing Next.js frontend. This brings article fetching, viewing, summarization, Q&A chat, and PDF export into the Knowledge Base alongside the existing YouTube channel functionality.
+Migrate the complete article scraping and AI analysis pipeline from the `medium-legal-scrapper` project into AlphaBase's existing Next.js frontend. This brings article fetching, viewing, summarization, Q&A chat, and PDF export into the Knowledge Base alongside the existing YouTube channel functionality.
 
 Users will be able to paste any article URL, have the system scrape and convert its content to Markdown, then interact with the article through AI-powered summaries and conversational Q&A — all within the same Knowledge Base hub they already use for YouTube content.
 
 ## Problem Statement
 
-ZipTrader's Knowledge Base currently supports only YouTube channels as a content source. Users who want to capture, organize, and analyze web articles must use a separate application (`medium-legal-scrapper`). This creates:
+AlphaBase's Knowledge Base currently supports only YouTube channels as a content source. Users who want to capture, organize, and analyze web articles must use a separate application (`medium-legal-scrapper`). This creates:
 
 - Fragmented workflows — users switch between two apps for related knowledge tasks
 - Duplicated infrastructure — cookie management, AI chat, and authentication exist in both projects
@@ -257,6 +257,6 @@ The system must support article deletion with cascade:
 - Article sharing between users
 - Automatic periodic re-scraping of articles for content updates
 - RSS feed integration
-- Browser extension for "save to ZipTrader"
+- Browser extension for "save to AlphaBase"
 - Rich media extraction (embedded videos, interactive elements)
 - Article content editing after scraping
