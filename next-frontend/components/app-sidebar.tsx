@@ -1,6 +1,6 @@
 "use client"
 
-import { FolderKanban, Database, Cookie, Brain, User2, ChevronUp } from "lucide-react"
+import { FolderKanban, Database, Cookie, Brain, Key, User2, ChevronUp } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
@@ -43,6 +43,11 @@ const items = [
     title: "Cookies",
     url: "/dashboard/cookies",
     icon: Cookie,
+  },
+  {
+    title: "API Keys",
+    url: "/dashboard/api-keys",
+    icon: Key,
   },
 ]
 
