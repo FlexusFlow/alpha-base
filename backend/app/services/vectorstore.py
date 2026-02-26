@@ -1,9 +1,15 @@
 # from langchain_community.vectorstores import DeepLake
+import asyncio
+import logging
+import os
+
 from langchain_deeplake import DeeplakeVectorStore
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class VectorStoreService:
@@ -71,6 +77,13 @@ class VectorStoreService:
         db.delete(ids=list(matching_ids))
         return len(matching_ids)
 
+    def _dataset_exists(self) -> bool:
+        """Check if the dataset exists (local directory or cloud dataset)."""
+        if self._is_cloud:
+            # For cloud datasets, we attempt to open and catch errors
+            return True  # Cloud datasets are created lazily; let methods handle errors
+        return os.path.exists(self.deeplake_path)
+
     async def similarity_search(
         self, query: str, k: int = 5, score_threshold: float = 0.0, deep_memory: bool = False
     ) -> list[tuple]:
@@ -81,33 +94,63 @@ class VectorStoreService:
             k: Maximum number of results.
             score_threshold: Minimum relevance score (0-1) to include a result.
             deep_memory: If True, use Deep Memory enhanced search (requires cloud DeepLake).
+
+        Returns empty list if the dataset doesn't exist yet (new user).
         """
-        db = DeeplakeVectorStore(**self._get_db_kwargs(read_only=True))
-        return await db.asimilarity_search_with_relevance_scores(
-            query=query, k=k, score_threshold=score_threshold, deep_memory=deep_memory
-        )
+        if not self._dataset_exists():
+            return []
+        try:
+            db = DeeplakeVectorStore(**self._get_db_kwargs(read_only=True))
+            return await db.asimilarity_search_with_relevance_scores(
+                query=query, k=k, score_threshold=score_threshold, deep_memory=deep_memory
+            )
+        except Exception as e:
+            if "does not exist" in str(e).lower() or "not found" in str(e).lower():
+                logger.info("Dataset not found at %s, returning empty results", self.deeplake_path)
+                return []
+            raise
 
     def get_chunk_count(self) -> int:
-        """Return the number of documents in the DeepLake dataset without loading content."""
-        db = DeeplakeVectorStore(**self._get_db_kwargs(read_only=True))
-        return len(db.dataset)
+        """Return the number of documents in the DeepLake dataset without loading content.
+
+        Returns 0 if the dataset doesn't exist yet (new user).
+        """
+        if not self._dataset_exists():
+            return 0
+        try:
+            db = DeeplakeVectorStore(**self._get_db_kwargs(read_only=True))
+            return len(db.dataset)
+        except Exception as e:
+            if "does not exist" in str(e).lower() or "not found" in str(e).lower():
+                logger.info("Dataset not found at %s, returning count 0", self.deeplake_path)
+                return 0
+            raise
 
     def get_all_chunk_ids_and_texts(self) -> list[dict]:
         """Enumerate all documents in the DeepLake dataset.
 
         Returns list of dicts: [{"id": chunk_id, "text": page_content, "metadata": {...}}]
+        Returns empty list if the dataset doesn't exist yet (new user).
         """
-        db = DeeplakeVectorStore(**self._get_db_kwargs(read_only=True))
-        dataset = db.dataset
+        if not self._dataset_exists():
+            return []
+        try:
+            db = DeeplakeVectorStore(**self._get_db_kwargs(read_only=True))
+            dataset = db.dataset
 
-        ids = dataset["ids"][:]
-        texts = dataset["documents"][:]
-        metadatas = dataset["metadata"][:]
+            ids = dataset["ids"][:]
+            texts = dataset["documents"][:]
+            metadatas = dataset["metadata"][:]
 
-        return [
-            {"id": str(ids[i]), "text": str(texts[i]), "metadata": metadatas[i]}
-            for i in range(len(ids))
-        ]
+            return [
+                {"id": str(ids[i]), "text": str(texts[i]), "metadata": metadatas[i]}
+                for i in range(len(ids))
+            ]
+        except Exception as e:
+            if "does not exist" in str(e).lower() or "not found" in str(e).lower():
+                logger.info("Dataset not found at %s, returning empty list", self.deeplake_path)
+                return []
+            raise
 
     def get_deep_memory_api(self):
         """Return the deep_memory sub-API from the DeepLake vectorstore.
@@ -116,3 +159,41 @@ class VectorStoreService:
         """
         db = DeeplakeVectorStore(**self._get_db_kwargs(read_only=False))
         return db.vectorstore.deep_memory
+
+
+def get_user_vectorstore(user_id: str, settings: Settings) -> VectorStoreService:
+    """Create a VectorStoreService scoped to a specific user's dataset.
+
+    Derives the per-user dataset path from the base deeplake_path:
+    - Local: ./knowledge_base/user-<user_id>
+    - Cloud: hub://<org>/user-<user_id>
+    """
+    user_path = f"{settings.deeplake_path}/user-{user_id}"
+    user_settings = settings.model_copy(update={"deeplake_path": user_path})
+    return VectorStoreService(user_settings)
+
+
+async def cleanup_user_vectorstore(user_id: str, settings: Settings) -> None:
+    """Clear all data from a user's dataset (for account deletion).
+
+    Uses overwrite=True to preserve the dataset name on DeepLake Cloud
+    (hard-deleting a cloud dataset permanently burns the name).
+    """
+    user_path = f"{settings.deeplake_path}/user-{user_id}"
+    is_cloud = user_path.startswith("hub://")
+
+    embeddings = OpenAIEmbeddings(
+        model=settings.embedding_model,
+        openai_api_key=settings.openai_api_key,
+    )
+    kwargs = {
+        "dataset_path": user_path,
+        "embedding_function": embeddings,
+        "overwrite": True,
+    }
+    if is_cloud:
+        kwargs["runtime"] = {"tensor_db": True}
+        kwargs["token"] = settings.activeloop_token
+
+    await asyncio.to_thread(DeeplakeVectorStore, **kwargs)
+    logger.info("Cleared vector store for user %s at %s", user_id, user_path)

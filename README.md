@@ -77,7 +77,7 @@ FE_HOST=http://localhost:3000
 **Optional (with defaults):**
 
 ```bash
-DEEPLAKE_PATH=./knowledge_base/deeplake_store  # or hub://org/dataset for cloud
+DEEPLAKE_PATH=./knowledge_base                  # local dev; use hub://<org> for cloud
 ACTIVELOOP_TOKEN=                               # required for DeepLake Cloud
 EMBEDDING_MODEL=text-embedding-3-small
 CHAT_MODEL=gpt-4o

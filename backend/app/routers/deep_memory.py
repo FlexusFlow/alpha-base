@@ -25,7 +25,7 @@ from app.models.deep_memory import (
 from app.services.job_manager import JobManager
 from app.services.deep_memory_service import train_deep_memory
 from app.services.training_generator import generate_training_data
-from app.services.vectorstore import VectorStoreService
+from app.services.vectorstore import get_user_vectorstore
 
 router = APIRouter(prefix="/v1/api/deep-memory", tags=["deep-memory"])
 
@@ -57,12 +57,12 @@ async def start_generation(
             },
         )
 
-    vectorstore = VectorStoreService(settings)
+    vectorstore = get_user_vectorstore(request.user_id, settings)
     chunks = await asyncio.to_thread(vectorstore.get_all_chunk_ids_and_texts)
     total_chunks = len(chunks)
 
     if total_chunks == 0:
-        raise HTTPException(status_code=400, detail="No chunks in vector store")
+        raise HTTPException(status_code=400, detail="No chunks in your knowledge base")
 
     # Create training run record
     run_result = supabase.table("deep_memory_training_runs").insert({
@@ -348,8 +348,8 @@ async def get_settings_endpoint(
     ).eq("user_id", user_id).eq("status", "completed").execute()
     can_enable = (completed_result.count or 0) > 0
 
-    # Get total chunks from vector store (lightweight count, no text loading)
-    vectorstore = VectorStoreService(settings)
+    # Get total chunks from user's vector store (lightweight count, no text loading)
+    vectorstore = get_user_vectorstore(user_id, settings)
     is_cloud = vectorstore._is_cloud
     total_chunks = await asyncio.to_thread(vectorstore.get_chunk_count)
 

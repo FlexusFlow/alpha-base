@@ -9,7 +9,7 @@ from supabase import Client
 from app.config import Settings
 from app.models.knowledge import JobStatus
 from app.services.job_manager import JobManager
-from app.services.vectorstore import VectorStoreService
+from app.services.vectorstore import get_user_vectorstore
 
 logger = logging.getLogger(__name__)
 
@@ -95,8 +95,8 @@ async def train_deep_memory(
             },
         )
 
-        # Get Deep Memory API
-        vectorstore = VectorStoreService(settings)
+        # Get Deep Memory API (scoped to user's dataset)
+        vectorstore = get_user_vectorstore(user_id, settings)
         deep_memory_api = await asyncio.to_thread(vectorstore.get_deep_memory_api)
 
         # Start training (only on train split, excludes held-out test set)
