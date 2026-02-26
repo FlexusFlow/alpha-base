@@ -37,6 +37,3 @@ https://github.com/FlexusFlow/alpha-base/commit/3bee5231bef2feb86b9d83e60d91ea8d
 ## Recent Changes
 - feature/ZIP-006-public-rag-api: Public RAG API with API key management and rate limiting; removed legacy frontend and POC scripts
 - feature/ZIP-005-failed-training-recovery: Phase-specific failure statuses, proceed/remove actions, expandable history rows, cloud-only gate
-- feature/ZIP-004-deep-memory-training: LLM training data generation, DeepLake Deep Memory training, dashboard UI with workflow steps
-- feature/ZIP-003-article-scraping-migration: Article scraping backend (Playwright + markdownify), frontend with viewer, chat, and summary
-- feature/ZIP-001-cookie-management: Added TypeScript (Next.js 15, React 19) + Next.js App Router, shadcn/ui, Supabase JS client, lucide-react

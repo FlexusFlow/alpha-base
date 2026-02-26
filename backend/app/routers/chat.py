@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sse_starlette.sse import EventSourceResponse
 from supabase import Client
 
@@ -18,13 +18,21 @@ async def chat(
     settings: Settings = Depends(get_settings),
     supabase: Client = Depends(get_supabase),
 ):
+    # Resolve user_id from project ownership — never trust the client
+    project_result = supabase.table("projects").select("user_id").eq(
+        "id", request.project_id
+    ).single().execute()
+    if not project_result.data:
+        raise HTTPException(status_code=404, detail="Project not found")
+    user_id = project_result.data["user_id"]
+
     chat_service = ChatService(settings, supabase=supabase)
 
     async def event_generator():
         full_response = ""
         sources = []
 
-        async for chunk in chat_service.stream(request.message, request.history, user_id=request.user_id):
+        async for chunk in chat_service.stream(request.message, request.history, user_id=user_id):
             if "token" in chunk:
                 full_response += chunk["token"]
                 yield {"data": json.dumps({"token": chunk["token"]})}

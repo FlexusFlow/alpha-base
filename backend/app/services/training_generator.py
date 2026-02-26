@@ -10,7 +10,7 @@ from supabase import Client
 from app.config import Settings
 from app.models.knowledge import JobStatus
 from app.services.job_manager import JobManager
-from app.services.vectorstore import VectorStoreService
+from app.services.vectorstore import get_user_vectorstore
 
 logger = logging.getLogger(__name__)
 
@@ -47,23 +47,33 @@ async def generate_training_data(
 ) -> None:
     """Background task: generate question-chunk training pairs using LLM."""
     openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
-    vectorstore = VectorStoreService(settings)
 
     try:
-        # Fetch all chunks from the vector store
+        # Get user_id from the training run record
+        run_result = supabase.table("deep_memory_training_runs").select(
+            "user_id"
+        ).eq("id", training_run_id).execute()
+        user_id = run_result.data[0]["user_id"]
+
+        # Create user-scoped vectorstore and fetch chunks
+        vectorstore = get_user_vectorstore(user_id, settings)
         chunks = await asyncio.to_thread(vectorstore.get_all_chunk_ids_and_texts)
+
+        # Warn if user has fewer than 50 chunks — training quality may be poor
+        if len(chunks) < 50:
+            logger.warning(
+                "User %s has only %d chunks (< 50). Deep Memory training results may be poor.",
+                user_id, len(chunks),
+            )
+            supabase.table("deep_memory_training_runs").update({
+                "error_message": f"Warning: Only {len(chunks)} chunks in knowledge base (< 50). Training results may be poor.",
+            }).eq("id", training_run_id).execute()
 
         # Check for already-processed chunks in THIS run (resumability)
         existing_result = supabase.table("deep_memory_training_pairs").select(
             "chunk_id"
         ).eq("training_run_id", training_run_id).execute()
         current_run_chunk_ids = {row["chunk_id"] for row in (existing_result.data or [])}
-
-        # Also get chunk_ids from ALL previous completed runs for this user (incremental)
-        run_result = supabase.table("deep_memory_training_runs").select(
-            "user_id"
-        ).eq("id", training_run_id).execute()
-        user_id = run_result.data[0]["user_id"]
 
         completed_runs = supabase.table("deep_memory_training_runs").select(
             "id"

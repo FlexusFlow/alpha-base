@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import Settings
-from app.routers import api_keys, articles, chat, deep_memory, events, knowledge, public_query, youtube
+from app.routers import api_keys, articles, chat, deep_memory, events, knowledge, public_query, user_cleanup, youtube
 
 
 def create_app() -> FastAPI:
@@ -23,6 +23,7 @@ def create_app() -> FastAPI:
     app.include_router(deep_memory.router)
     app.include_router(knowledge.router)
     app.include_router(public_query.router)
+    app.include_router(user_cleanup.router)
     app.include_router(youtube.router)
     app.include_router(events.router)
 

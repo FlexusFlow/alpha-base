@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     fe_host: str                   # will read from .env
     supabase_service_key: str      # will read from .env
     supabase_url: str              # will read from .env
-    deeplake_path: str = "./knowledge_base/deeplake_store"
+    deeplake_path: str             # will read from .env
+    activeloop_token: str          # will read from .env
     transcripts_dir: str = "./knowledge_base/transcripts"
     cors_origins: List[str] = []   # will be set from fe_host if not provided
     embedding_model: str = "text-embedding-3-small"
@@ -23,7 +24,6 @@ class Settings(BaseSettings):
     chat_max_tokens: int = 2048
     rag_retrieval_k: int = 5
     rag_score_threshold: float = 0.3
-    activeloop_token: str = ""
     deep_memory_generation_model: str = "gpt-4o"
     deep_memory_target_questions_per_chunk: int = 4
     deep_memory_max_pairs: int = 5000

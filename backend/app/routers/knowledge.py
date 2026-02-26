@@ -23,7 +23,7 @@ from app.models.knowledge import (
 from app.services.cookie_service import get_cookies_for_domain
 from app.services.job_manager import JobManager
 from app.services.transcriber import delete_transcripts, get_transcript, save_transcript_md
-from app.services.vectorstore import VectorStoreService
+from app.services.vectorstore import get_user_vectorstore
 
 router = APIRouter(prefix="/v1/api/knowledge", tags=["knowledge"])
 
@@ -95,8 +95,7 @@ async def process_knowledge_job(
     # Batch vectorize all successful transcripts
     if transcripts:
         try:
-            from app.services.vectorstore import VectorStoreService
-            vectorstore = VectorStoreService(settings)
+            vectorstore = get_user_vectorstore(user_id, settings)
             await asyncio.to_thread(
                 vectorstore.add_documents, transcripts, metadatas
             )
@@ -201,7 +200,7 @@ async def _delete_single_channel(
 
         # 4a. Delete vector store entries
         try:
-            vectorstore = VectorStoreService(settings)
+            vectorstore = get_user_vectorstore(user_id, settings)
             vectors_deleted = await asyncio.to_thread(vectorstore.delete_by_video_ids, video_ids)
         except Exception as e:
             raise HTTPException(

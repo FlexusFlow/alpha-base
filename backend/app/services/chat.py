@@ -6,7 +6,7 @@ from supabase import Client
 
 from app.config import Settings
 from app.models.chat import ChatMessage
-from app.services.vectorstore import VectorStoreService
+from app.services.vectorstore import get_user_vectorstore
 
 SYSTEM_PROMPT = """You are a helpful AI assistant for AlphaBase knowledge base.
 Use ONLY the provided context from transcribed YouTube videos and articles to answer questions accurately.
@@ -26,7 +26,6 @@ class ChatService:
     def __init__(self, settings: Settings, supabase: Client | None = None):
         self.settings = settings
         self.supabase = supabase
-        self.vectorstore = VectorStoreService(settings)
         self.llm = ChatOpenAI(
             model=settings.chat_model,
             max_tokens=settings.chat_max_tokens,
@@ -34,11 +33,11 @@ class ChatService:
             streaming=True,
         )
 
-    async def _retrieve_context(self, query: str, user_id: str | None = None) -> tuple[str, list[str]]:
-        """Retrieve relevant context from the vector store with score filtering."""
+    async def _retrieve_context(self, query: str, user_id: str) -> tuple[str, list[str]]:
+        """Retrieve relevant context from the user's vector store with score filtering."""
         # Check if Deep Memory is enabled for this user
         deep_memory = False
-        if user_id and self.supabase:
+        if self.supabase:
             try:
                 settings_result = self.supabase.table("deep_memory_settings").select(
                     "enabled"
@@ -48,7 +47,8 @@ class ChatService:
             except Exception:
                 pass  # Fallback to standard search
 
-        results = await self.vectorstore.similarity_search(
+        vectorstore = get_user_vectorstore(user_id, self.settings)
+        results = await vectorstore.similarity_search(
             query=query,
             k=self.settings.rag_retrieval_k,
             score_threshold=self.settings.rag_score_threshold,
@@ -56,7 +56,8 @@ class ChatService:
         )
 
         if not results:
-            return "No relevant context found.", []
+            return ("No content found in your knowledge base. "
+                    "Add YouTube channels or articles to get started."), []
 
         context_parts = []
         sources = []
@@ -91,7 +92,7 @@ class ChatService:
         return messages
 
     async def stream(
-        self, message: str, history: list[ChatMessage], user_id: str | None = None
+        self, message: str, history: list[ChatMessage], user_id: str
     ) -> AsyncGenerator[dict, None]:
         """Stream the RAG response. Yields dicts with 'token' or 'done' keys."""
         context, sources = await self._retrieve_context(message, user_id=user_id)
