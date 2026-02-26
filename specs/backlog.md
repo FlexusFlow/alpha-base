@@ -2,9 +2,10 @@
 
 ## Priority: High
 
+- **Per-User Knowledge Base Isolation** — The DeepLake vector store is shared across all users — not isolated per user. All users contribute to and consume the same shared vector store. Any user who adds YouTube channels or articles updates the knowledge base for everyone. Implement per-user isolation so each user has their own vector store partition. The project was originally built for a single client.
 - **FastAPI Auth Middleware (Defense in Depth)** — Backend endpoints accept `user_id` from request body/query params. While Next.js API routes inject the authenticated user's ID, the FastAPI endpoints themselves are unauthenticated — any direct caller can pass any `user_id` and access another user's data (Supabase service-role client bypasses RLS). Add JWT validation middleware to FastAPI that extracts `user_id` from the Supabase access token. Affects all existing routers (`chat`, `knowledge`, `youtube`, `articles`, `deep_memory`). Discovered during ZIP-004 PR review.
 
-## Priority: RAG Quality
+## Priority: RAG Quality (implemented and waiting Knowledge Base migration to the DeepLake hub)
 
 - **Deep Memory for RAG Accuracy (+22%)** — Train Deep Lake's Deep Memory feature on AlphaBase's dataset to boost retrieval accuracy by up to 22%. Trains a lightweight transformation layer on top of existing embeddings, adapting them to financial/trading domain. Steps: (1) generate question-chunk pairs from existing transcripts via LLM, (2) `db.deep_memory.train(queries, relevance)`, (3) enable `deep_memory=True` on search. Requires Cloud DeepLake migration first. Especially valuable for trading jargon, ticker symbols, and domain-specific terminology that generic embeddings handle poorly. See technote: `.technotes/deep-memory-rag-accuracy.md`
 
@@ -14,7 +15,6 @@
 
 ## From: Customer Support Q&A Chatbot Article
 
-- **Article/Web Content Ingestion** — Extend knowledge base beyond YouTube to web articles, blog posts, and documentation. URL scraping + file upload (PDF, markdown). "Add Article" button (AB-0027) and dropzone (AB-0037) already exist.
 - **Temperature 0 for Factual Mode** — "Factual Mode" toggle in the chat UI that drops temperature to 0 for deterministic, fact-grounded, citation-backed answers vs. creative analysis.
 - **Multi-Source Context Attribution** — RAG responses should return structured `{"answer": "...", "sources": [...]}` format with clickable links to originals. Every chunk must carry `source` metadata (video URL+timestamp for transcripts, article URL for web content, source_type for filtering). UI renders sources as clickable references under each answer. Pattern validated by RetrievalQAWithSourcesChain approach. See technote: `.technotes/qa-chatbot-with-sources.md`
 - **Cloud DeepLake Migration** — Migrate from local DeepLake to Activeloop Cloud (migration path documented in AB-0069). Enables persistent, shared vector stores and better scalability. Deep Lake 3.71+ includes HNSW index for sub-second ANN search at scale (35M+ embeddings) and is ~80% cheaper than Pinecone/Qdrant/Weaviate.

@@ -58,6 +58,21 @@ export async function POST(
     { role: 'user' as const, content: message },
   ];
 
+  // Persist user message before streaming so it's never lost
+  const { error: userMsgError } = await supabase.from('article_chat_messages').insert({
+    article_id: id,
+    user_id: user.id,
+    role: 'user',
+    content: message,
+  });
+
+  if (userMsgError) {
+    return new Response(JSON.stringify({ error: 'Failed to save message' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   const encoder = new TextEncoder();
   let fullResponse = '';
 
@@ -80,21 +95,20 @@ export async function POST(
           }
         }
 
-        // Save messages to DB
-        await supabase.from('article_chat_messages').insert([
-          {
-            article_id: id,
-            user_id: user.id,
-            role: 'user',
-            content: message,
-          },
-          {
-            article_id: id,
-            user_id: user.id,
-            role: 'assistant',
-            content: fullResponse,
-          },
-        ]);
+        // Save assistant response to DB
+        const { error: assistantMsgError } = await supabase.from('article_chat_messages').insert({
+          article_id: id,
+          user_id: user.id,
+          role: 'assistant',
+          content: fullResponse,
+        });
+
+        if (assistantMsgError) {
+          console.error('Failed to persist assistant message:', assistantMsgError.message);
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ warning: 'Response may not be saved' })}\n\n`),
+          );
+        }
 
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
         controller.close();

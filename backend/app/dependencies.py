@@ -1,3 +1,4 @@
+import logging
 from functools import lru_cache
 
 from fastapi import Depends, HTTPException, Request
@@ -7,6 +8,8 @@ from app.config import Settings
 from app.services.api_key_service import APIKeyService
 from app.services.job_manager import JobManager
 from app.services.rate_limiter import RateLimiter
+
+logger = logging.getLogger(__name__)
 
 _job_manager = JobManager()
 _supabase_client: Client | None = None
@@ -53,8 +56,6 @@ async def verify_api_key(
     """
     auth_header = request.headers.get("Authorization")
 
-    print(f"DEBUG auth_header: {repr(auth_header)}")
-
     if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
@@ -62,8 +63,6 @@ async def verify_api_key(
         )
 
     api_key = auth_header.removeprefix("Bearer ").strip()
-
-    print(f"DEBUG after removeprefix: {repr(api_key)}")
 
     service = APIKeyService(supabase)
     verified = service.verify(api_key)

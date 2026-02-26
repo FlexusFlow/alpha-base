@@ -5,15 +5,15 @@ Full-stack YouTube knowledge base app. All rules live in `.claude/rules/`.
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
 
-## Tech Notes (`.technotes/`)
+## Tech Notes (`.local/.technotes/`)
 
-When an external article or technology is reviewed and a decision is made (adopt, reject, or defer), create a technote in `.technotes/`:
+When an external article or technology is reviewed and a decision is made (adopt, reject, or defer), create a technote in `.local/.technotes/`:
 - Summarize the article/technology
 - Compare with AlphaBase's current approach
 - Document **why** a particular option was chosen or rejected
 - If something is added to `specs/backlog.md`, reference the corresponding technote
 
-Format: `.technotes/{topic-slug}.md`
+Format: `.local/.technotes/{topic-slug}.md`
 
 Previous version before splitting Claude.md on claude rules
 https://github.com/FlexusFlow/alpha-base/commit/3bee5231bef2feb86b9d83e60d91ea8dc833b5dd#diff-6ebdb617a8104a7756d0cf36578ab01103dc9f07e4dc6feb751296b9c402faf7

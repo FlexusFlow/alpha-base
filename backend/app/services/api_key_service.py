@@ -1,8 +1,11 @@
 import hashlib
+import logging
 import secrets
 from datetime import datetime, timezone
 
 from supabase import Client
+
+logger = logging.getLogger(__name__)
 
 
 class APIKeyService:
@@ -72,7 +75,7 @@ class APIKeyService:
                 {"last_used_at": datetime.now(timezone.utc).isoformat()}
             ).eq("id", record["id"]).execute()
         except Exception:
-            pass  # Non-critical
+            logger.warning("Failed to update last_used_at for key %s", record["id"])
 
         return {
             "key_id": record["id"],
@@ -119,7 +122,7 @@ class APIKeyService:
                 }
             ).execute()
         except Exception:
-            pass  # Logging failure should never block the request
+            logger.warning("Failed to log API usage for key %s", api_key_id)
 
     # ------------------------------------------------------------------
     # Helpers

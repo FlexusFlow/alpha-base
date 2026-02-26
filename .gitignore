@@ -29,6 +29,9 @@ backend/knowledge_base/
 .DS_Store
 Thumbs.db
 
+# MCP
+.mcp.json
+
 # Plan files
 .claude/plans/
 .claude/settings.local.json

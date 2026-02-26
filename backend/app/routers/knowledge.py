@@ -1,8 +1,11 @@
 import asyncio
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from supabase import Client
+
+logger = logging.getLogger(__name__)
 
 from app.config import Settings
 from app.dependencies import get_job_manager, get_settings, get_supabase
@@ -61,17 +64,19 @@ async def process_knowledge_job(
                 "source": f"https://youtube.com/watch?v={video.video_id}",
             })
             # Mark video as transcribed in Supabase
-            supabase.table("videos").update(
-                {"is_transcribed": True}
-            ).eq("video_id", video.video_id).execute()
+            try:
+                supabase.table("videos").update(
+                    {"is_transcribed": True}
+                ).eq("video_id", video.video_id).execute()
+            except Exception as db_err:
+                logger.error("Failed to mark video %s as transcribed: %s", video.video_id, db_err)
             # Track successful transcription
             job = job_manager.get_job(job_id)
             succeeded = list(job.succeeded_videos) if job else []
             succeeded.append(video.video_id)
             job_manager.update_job(job_id, succeeded_videos=succeeded)
         except Exception as e:
-            print("EXCEPTION")
-            print(e)
+            logger.error("Failed to transcribe video %s: %s", video.video_id, e)
             job = job_manager.get_job(job_id)
             failed = list(job.failed_videos) if job else []
             failed.append(video.video_id)

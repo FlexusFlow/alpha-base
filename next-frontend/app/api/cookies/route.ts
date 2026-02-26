@@ -98,10 +98,28 @@ export async function POST(request: NextRequest) {
       // File isn't valid JSON array — continue without expiry data
     }
 
-    // If replacing, delete old file and record
+    // If replacing, delete old record and file
     if (existing) {
-      await supabase.storage.from("cookie-files").remove([existing.file_path]);
-      await supabase.from("user_cookies").delete().eq("id", existing.id);
+      const { error: deleteRecordError } = await supabase
+        .from("user_cookies")
+        .delete()
+        .eq("id", existing.id);
+
+      if (deleteRecordError) {
+        return NextResponse.json(
+          { error: `Failed to replace existing cookie: ${deleteRecordError.message}` },
+          { status: 500 }
+        );
+      }
+
+      const { error: deleteFileError } = await supabase.storage
+        .from("cookie-files")
+        .remove([existing.file_path]);
+
+      if (deleteFileError) {
+        console.error("Failed to delete old cookie file from storage:", deleteFileError.message);
+        // Non-fatal: DB record is already deleted, proceed with upload
+      }
     }
 
     // Upload new file
