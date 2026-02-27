@@ -29,11 +29,6 @@ def normalize_channel_url(url: str) -> str:
 
 
 def scrape_channel(channel_url: str, category: str= "", max_count: int = 500, limit: int = 0, skip: int = 0) -> YTChannelPreview:
-    print( """
-        Use yt-dlp Python API to extract channel video metadata.
-        extract_flat="in_playlist" gets metadata without downloading.
-        """
-    )
     videos_url = normalize_channel_url(channel_url)
 
     ydl_opts = {
@@ -54,10 +49,6 @@ def scrape_channel(channel_url: str, category: str= "", max_count: int = 500, li
     entries = info.get("entries", [])
 
     videos = []
-    print("limit", limit)
-    print("skip", skip)
-    print("max_count", max_count)
-    print(len(entries)) 
     for index, entry in enumerate(entries):
         if entry is None:
             continue
@@ -66,7 +57,6 @@ def scrape_channel(channel_url: str, category: str= "", max_count: int = 500, li
         if not video_id or not title:
             continue
 
-        # print("processing video", index)
         video = YTVideo(
             video_id=video_id,
             title=title,
@@ -82,7 +72,6 @@ def scrape_channel(channel_url: str, category: str= "", max_count: int = 500, li
     videos.sort(key=lambda v: v.views, reverse=True)
     idx_from = skip
     idx_to = skip + limit if len(videos) > (skip + limit) else len(videos)
-    print(category, idx_from, idx_to)
     paginated_videos = videos[idx_from: idx_to] if limit else videos
 
     # Build category counts

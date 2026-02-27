@@ -23,9 +23,10 @@ https://github.com/FlexusFlow/alpha-base/commit/3bee5231bef2feb86b9d83e60d91ea8d
 - Supabase (PostgreSQL for metadata, Storage for files)
 - DeepLake Cloud (Managed Tensor DB) with Deep Memory for RAG accuracy (ZIP-004)
 - LangChain + langchain-deeplake for vector store operations
+- Playwright + markdownify for web scraping (articles & documentation sites)
 
 ## Known Limitations
-- The DeepLake vector store is shared across all users — not isolated per user. Per-user knowledge base splitting is in the backlog (project was originally built for a single client).
+- No FastAPI auth middleware — backend endpoints accept `user_id` from request body. JWT validation is in the backlog.
 
 ## Before SDD approach features
 - see specs/implemented-features.md
@@ -35,5 +36,5 @@ https://github.com/FlexusFlow/alpha-base/commit/3bee5231bef2feb86b9d83e60d91ea8d
   ```
 
 ## Recent Changes
-- feature/ZIP-006-public-rag-api: Public RAG API with API key management and rate limiting; removed legacy frontend and POC scripts
-- feature/ZIP-005-failed-training-recovery: Phase-specific failure statuses, proceed/remove actions, expandable history rows, cloud-only gate
+- feature/ALP-008-doc-scraping: Multi-page documentation site scraping — BFS discovery, concurrent scraping (3 workers), per-page status tracking, vector indexing, retry failed pages
+- feature/ALP-007-kb-user-isolation: Per-user knowledge base isolation with dedicated DeepLake datasets
