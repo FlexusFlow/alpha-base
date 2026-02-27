@@ -9,7 +9,7 @@ from app.models.chat import ChatMessage
 from app.services.vectorstore import get_user_vectorstore
 
 SYSTEM_PROMPT = """You are a helpful AI assistant for AlphaBase knowledge base.
-Use ONLY the provided context from transcribed YouTube videos and articles to answer questions accurately.
+Use ONLY the provided context from transcribed YouTube videos, articles, and documentation sites to answer questions accurately.
 
 If the context doesn't contain relevant information about the user's question:
 1. Clearly state: "I don't have information about [topic] in my knowledge base."

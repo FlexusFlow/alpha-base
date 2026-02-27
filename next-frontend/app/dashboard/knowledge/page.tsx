@@ -14,10 +14,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Youtube, FileText, Loader2, CheckSquare, X } from 'lucide-react';
+import { Youtube, FileText, BookOpen, Loader2, CheckSquare, X } from 'lucide-react';
 import Link from 'next/link';
 import { ChannelCard } from '@/components/youtube/channel-card';
 import { ArticleList } from '@/components/articles/article-list';
+import { DocumentationList } from '@/components/documentation/documentation-list';
 import { createBrowserChannelHelpers } from '@/lib/supabase/channels';
 import { DbChannel } from '@/lib/types/database';
 import { useToast } from '@/hooks/use-toast';
@@ -152,7 +153,7 @@ export default function KnowledgeBasePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -183,6 +184,23 @@ export default function KnowledgeBasePage() {
           <CardContent>
             <Button asChild>
               <Link href="/dashboard/knowledge/articles/add">Add Article</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Documentation
+            </CardTitle>
+            <CardDescription>
+              Scrape multi-page documentation sites into your knowledge base
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href="/dashboard/knowledge/documentation/add">Add Documentation</Link>
             </Button>
           </CardContent>
         </Card>
@@ -251,6 +269,12 @@ export default function KnowledgeBasePage() {
       <div className="space-y-3">
         <h2 className="text-xl font-semibold">Scraped Articles</h2>
         <ArticleList />
+      </div>
+
+      {/* Documentation Collections */}
+      <div className="space-y-3">
+        <h2 className="text-xl font-semibold">Documentation Collections</h2>
+        <DocumentationList />
       </div>
 
       {/* Bulk Delete Floating Action Bar */}

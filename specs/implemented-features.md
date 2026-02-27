@@ -163,4 +163,35 @@
 - ZIP-005 Cloud-only gate — `is_cloud` field in settings response derived from `VectorStoreService._is_cloud`; when DeepLake is local, hides all Deep Memory page cards and shows warning to configure `hub://` path
 - ZIP-005 Correct resume progress — Fixed `total_chunks` computation on resume to include already-processed chunks (e.g., `51/80` not `51/30`)
 
+## Stage 13: Public RAG API + ClawHub Skill (ZIP-006)
+
+- ZIP-006 API key generation — Secure `zt_` prefixed keys (44+ chars) with SHA-256 hash storage, one-time full key display at creation, prefix-only shown afterward
+- ZIP-006 API key management — Dashboard page with TanStack Table listing keys (prefix, name, created date, last used, status badge), create dialog, revoke action with confirmation
+- ZIP-006 Public RAG query endpoint — `POST /v1/api/public/query` with Bearer token auth, synchronous JSON response (answer + sources), conversation history support, no SSE streaming
+- ZIP-006 Rate limiting — In-memory sliding window rate limiter (60 requests/minute per API key), resets on server restart (MVP-appropriate)
+- ZIP-006 Usage logging — `api_usage_logs` table tracking API key usage (endpoint, status code, timestamp) for auditing
+- ZIP-006 Auth dependencies — `verify_api_key` and `check_rate_limit` FastAPI dependencies for public endpoints, chained via `Depends()`
+- ZIP-006 ClawHub skill file — Markdown skill definition for AI assistant integration with AlphaBase RAG knowledge base
+- ZIP-006 Database schema — `api_keys` and `api_usage_logs` Supabase tables with RLS, indexes on key hash, user+active, and usage timestamps
+
+## Stage 14: Per-User Knowledge Base Isolation (ALP-007)
+
+- ALP-007 Per-user DeepLake datasets — Each user gets a dedicated vector store at `hub://{org}/{user_id}`, created on first content add, isolating RAG queries to user's own content
+- ALP-007 VectorStoreService refactor — Replaced global `_get_vectorstore()` with `VectorStoreService(user_id)` class, all callers (knowledge, articles, chat, deep memory) updated to pass user_id
+- ALP-007 Dataset lifecycle — Auto-creation on first add, `exists()` check via DeepLake API, graceful handling when dataset doesn't exist yet (empty search results, skip deletion)
+- ALP-007 Supabase error hardening — Wrapped Supabase `.execute()` calls with proper error checking across services
+
+## Stage 15: Documentation Site Scraping (ALP-008)
+
+- ALP-008 Documentation discovery — Playwright loads entry URL, LLM (gpt-4o-mini) extracts documentation-relevant links from page HTML in a single pass, replacing BFS crawling; falls back to same-domain `<a href>` extraction if LLM fails
+- ALP-008 Bulk page scraping — Concurrent scraping (3 workers via asyncio.Semaphore) with per-page status tracking (pending→scraping→completed/failed), reuses article scraping pipeline (Playwright + markdownify), SSE progress reporting via JobManager
+- ALP-008 Documentation collections — `doc_collections` and `doc_pages` Supabase tables with RLS, CASCADE deletes, collection-level status (completed/partial/failed), page count stats
+- ALP-008 Vector store indexing — `add_documentation_pages()` chunks page Markdown and indexes in DeepLake with metadata (collection_id, page_url, page_title, site_name, source_type="documentation"); `delete_by_collection_id()` for cascade cleanup
+- ALP-008 Collection viewer — Browse collections on KB hub (card grid with status badges), view page list within a collection, view individual page rendered Markdown (react-markdown + remark-gfm)
+- ALP-008 Collection deletion — Full cascade: vector store entries → database records (collection + pages), confirmation dialog, redirect to KB hub
+- ALP-008 Retry failed pages — Re-scrape only failed pages without touching successful ones, updates collection status on completion, SSE progress for retry jobs
+- ALP-008 Cookie support — Reuses ZIP-001/ZIP-002 cookie infrastructure for authenticated documentation sites, debounced domain check on URL input
+- ALP-008 Full page title as collection name — Uses entry page `<title>` as collection name instead of extracting a suffix; falls back to hostname if title is empty
+- ALP-008 Configurable log level — `LOG_LEVEL` env var (default INFO) configures Python logging via `logging.basicConfig()` in app startup
+
 ## Planned (Not Yet Implemented)

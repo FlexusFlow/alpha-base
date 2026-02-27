@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     deep_memory_target_questions_per_chunk: int = 4
     deep_memory_max_pairs: int = 5000
     deep_memory_generation_delay: float = 1.0
+    doc_link_filter_model: str = "gpt-4o-mini"
+    log_level: str = "INFO"
 
     model_config = SettingsConfigDict(
         env_file=".env",

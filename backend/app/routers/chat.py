@@ -1,4 +1,5 @@
 import json
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 from sse_starlette.sse import EventSourceResponse
@@ -8,6 +9,8 @@ from app.config import Settings
 from app.dependencies import get_settings, get_supabase
 from app.models.chat import ChatRequest
 from app.services.chat import ChatService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/api/chat", tags=["chat"])
 
@@ -56,6 +59,6 @@ async def chat(
                 "sources": json.dumps(sources),
             }).execute()
         except Exception as e:
-            print(f"Failed to store chat messages: {e}")
+            logger.error("Failed to store chat messages: %s", e)
 
     return EventSourceResponse(event_generator())

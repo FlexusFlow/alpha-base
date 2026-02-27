@@ -77,6 +77,55 @@ class VectorStoreService:
         db.delete(ids=list(matching_ids))
         return len(matching_ids)
 
+    def add_documentation_pages(
+        self,
+        pages: list[dict],
+        collection_id: str,
+        site_name: str,
+        user_id: str,
+    ) -> None:
+        """Index documentation pages into DeepLake with documentation-specific metadata.
+
+        Args:
+            pages: List of dicts with keys: page_url, title, content_markdown
+            collection_id: UUID of the doc_collection
+            site_name: Name of the documentation site
+            user_id: Owner user ID
+        """
+        texts = []
+        metadatas = []
+        for page in pages:
+            if not page.get("content_markdown"):
+                continue
+            texts.append(page["content_markdown"])
+            metadatas.append({
+                "collection_id": collection_id,
+                "page_url": page["page_url"],
+                "page_title": page.get("title", ""),
+                "site_name": site_name,
+                "source_type": "documentation",
+                "source": page["page_url"],
+            })
+        if texts:
+            self.add_documents(texts, metadatas)
+
+    def delete_by_collection_id(self, collection_id: str) -> int:
+        """Delete all vector chunks matching a documentation collection_id."""
+        if not collection_id:
+            return 0
+
+        db = DeeplakeVectorStore(**self._get_db_kwargs(overwrite=False))
+
+        query = f"SELECT ids FROM (SELECT * WHERE metadata['collection_id'] == '{collection_id}')"
+        results = db.dataset.query(query)
+
+        matching_ids = results["ids"][:]
+        if len(matching_ids) == 0:
+            return 0
+
+        db.delete(ids=list(matching_ids))
+        return len(matching_ids)
+
     def _dataset_exists(self) -> bool:
         """Check if the dataset exists (local directory or cloud dataset)."""
         if self._is_cloud:
