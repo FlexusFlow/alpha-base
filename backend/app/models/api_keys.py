@@ -13,7 +13,6 @@ class ChatMessage(BaseModel):
 
 class APIKeyCreateRequest(BaseModel):
     name: str = Field(..., max_length=100)
-    user_id: str
 
 
 class APIKeyCreateResponse(BaseModel):

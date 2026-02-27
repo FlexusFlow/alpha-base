@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from supabase import Client
 
-from app.dependencies import get_supabase
+from app.dependencies import get_current_user, get_supabase
 from app.models.api_keys import (
     APIKeyCreateRequest,
     APIKeyCreateResponse,
@@ -16,12 +16,13 @@ router = APIRouter(prefix="/v1/api/keys", tags=["api-keys"])
 @router.post("", response_model=APIKeyCreateResponse, status_code=201)
 async def create_api_key(
     request: APIKeyCreateRequest,
+    user_id: str = Depends(get_current_user),
     supabase: Client = Depends(get_supabase),
 ):
     """Create a new API key. The full key is returned ONCE — store it securely."""
     service = APIKeyService(supabase)
     full_key, key_prefix, key_id = service.create(
-        user_id=request.user_id,
+        user_id=user_id,
         name=request.name,
     )
 
@@ -35,7 +36,7 @@ async def create_api_key(
 
 @router.get("", response_model=APIKeyListResponse)
 async def list_api_keys(
-    user_id: str = Query(...),
+    user_id: str = Depends(get_current_user),
     supabase: Client = Depends(get_supabase),
 ):
     """List all API keys for a user."""
@@ -60,7 +61,7 @@ async def list_api_keys(
 @router.delete("/{key_id}", status_code=204)
 async def revoke_api_key(
     key_id: str,
-    user_id: str = Query(...),
+    user_id: str = Depends(get_current_user),
     supabase: Client = Depends(get_supabase),
 ):
     """Revoke (deactivate) an API key."""

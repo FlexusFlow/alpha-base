@@ -6,7 +6,7 @@ from sse_starlette.sse import EventSourceResponse
 from supabase import Client
 
 from app.config import Settings
-from app.dependencies import get_settings, get_supabase
+from app.dependencies import get_current_user, get_settings, get_supabase
 from app.models.chat import ChatRequest
 from app.services.chat import ChatService
 
@@ -18,6 +18,7 @@ router = APIRouter(prefix="/v1/api/chat", tags=["chat"])
 @router.post("")
 async def chat(
     request: ChatRequest,
+    _user_id: str = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
     supabase: Client = Depends(get_supabase),
 ):

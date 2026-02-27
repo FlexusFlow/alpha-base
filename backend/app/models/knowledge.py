@@ -19,7 +19,6 @@ class KnowledgeAddRequest(BaseModel):
     channel_title: str
     channel_id: str = ""
     videos: list[VideoSelection]
-    user_id: str
 
 
 class KnowledgeAddResponse(BaseModel):
@@ -50,7 +49,6 @@ class ChannelDeleteResponse(BaseModel):
 
 class BulkDeleteRequest(BaseModel):
     channel_ids: list[str]
-    user_id: str
 
 
 class BulkDeleteItemSuccess(BaseModel):

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class GenerateRequest(BaseModel):
-    user_id: str
+    pass
 
 
 class GenerateResponse(BaseModel):
@@ -16,7 +16,6 @@ class GenerateResponse(BaseModel):
 
 class TrainRequest(BaseModel):
     training_run_id: str
-    user_id: str
 
 
 class TrainResponse(BaseModel):
@@ -71,7 +70,6 @@ class DeepMemorySettingsResponse(BaseModel):
 
 class ProceedRequest(BaseModel):
     training_run_id: str
-    user_id: str
 
 
 class ProceedResponse(BaseModel):
@@ -82,4 +80,3 @@ class ProceedResponse(BaseModel):
 
 class UpdateSettingsRequest(BaseModel):
     enabled: bool
-    user_id: str

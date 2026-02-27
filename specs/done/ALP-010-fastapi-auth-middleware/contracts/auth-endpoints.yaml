@@ -1,0 +1,111 @@
+# ALP-010: Authentication Contract
+# Defines how authentication changes affect all existing endpoints
+
+# ──────────────────────────────────────────────────
+# Authentication Mechanism
+# ──────────────────────────────────────────────────
+#
+# All protected endpoints require:
+#   Authorization: Bearer <supabase_access_token>
+#
+# The token is a Supabase-issued JWT. The backend validates it locally
+# using SUPABASE_JWT_SECRET (HS256) and extracts user_id from the `sub` claim.
+
+# ──────────────────────────────────────────────────
+# Error Responses (Authentication)
+# ──────────────────────────────────────────────────
+#
+# 401 Unauthorized — returned for all auth failures:
+#
+#   Missing token:
+#     { "detail": "Authorization header missing" }
+#
+#   Invalid/malformed token:
+#     { "detail": "Invalid authentication token" }
+#
+#   Expired token:
+#     { "detail": "Authentication token has expired" }
+
+# ──────────────────────────────────────────────────
+# Endpoint Classification
+# ──────────────────────────────────────────────────
+
+protected_endpoints:
+  # All require: Authorization: Bearer <jwt>
+  # user_id is extracted from JWT sub claim — NOT from request body/params
+
+  knowledge:
+    - POST   /v1/api/knowledge/youtube/add
+    - DELETE  /v1/api/knowledge/channels/{channel_id}
+    - POST   /v1/api/knowledge/channels/delete-bulk
+    - GET    /v1/api/knowledge/jobs/{job_id}
+
+  articles:
+    - POST   /v1/api/articles/scrape
+
+  deep_memory:
+    - POST   /v1/api/deep-memory/generate
+    - POST   /v1/api/deep-memory/train
+    - POST   /v1/api/deep-memory/proceed
+    - GET    /v1/api/deep-memory/runs
+    - GET    /v1/api/deep-memory/runs/{run_id}
+    - DELETE  /v1/api/deep-memory/runs/{run_id}
+    - GET    /v1/api/deep-memory/settings
+    - PUT    /v1/api/deep-memory/settings
+
+  api_keys:
+    - POST   /v1/api/keys
+    - GET    /v1/api/keys
+    - DELETE  /v1/api/keys/{key_id}
+
+  chat:
+    - POST   /v1/api/chat
+
+  internal:
+    - DELETE  /v1/api/internal/user-cleanup
+
+public_api_key_endpoints:
+  # Require: Authorization: Bearer <api_key> (existing verify_api_key dependency)
+  # NO change to authentication mechanism
+  public_query:
+    - POST   /v1/api/api/public/query
+
+public_endpoints:
+  # No authentication required
+  youtube:
+    - GET    /v1/api/youtube/preview
+
+  events:
+    - GET    /v1/api/events/stream/{job_id}
+
+  health:
+    - GET    /health
+
+# ──────────────────────────────────────────────────
+# Breaking Changes to Request Contracts
+# ──────────────────────────────────────────────────
+#
+# The following fields are REMOVED from request bodies/params:
+#
+# Request body user_id removed:
+#   - KnowledgeAddRequest.user_id
+#   - BulkDeleteRequest.user_id
+#   - ArticleScrapeRequest.user_id
+#   - GenerateRequest.user_id
+#   - TrainRequest.user_id
+#   - ProceedRequest.user_id
+#   - UpdateSettingsRequest.user_id
+#   - APIKeyCreateRequest.user_id
+#
+# Query param user_id removed:
+#   - DELETE /channels/{channel_id}?user_id=...
+#   - GET /keys?user_id=...
+#   - DELETE /keys/{key_id}?user_id=...
+#   - GET /deep-memory/runs?user_id=...
+#   - GET /deep-memory/runs/{run_id}?user_id=...
+#   - DELETE /deep-memory/runs/{run_id}?user_id=...
+#   - GET /deep-memory/settings?user_id=...
+#
+# Path param user_id removed:
+#   - DELETE /internal/user-cleanup/{user_id}
+#     → becomes: DELETE /internal/user-cleanup (uses JWT identity)

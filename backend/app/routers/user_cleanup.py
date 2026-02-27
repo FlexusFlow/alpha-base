@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, Depends
 
 from app.config import Settings
-from app.dependencies import get_settings
+from app.dependencies import get_current_user, get_settings
 from app.services.vectorstore import cleanup_user_vectorstore
 
 logger = logging.getLogger(__name__)
@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/v1/api/internal", tags=["internal"])
 
 
-@router.delete("/user-cleanup/{user_id}")
+@router.delete("/user-cleanup")
 async def cleanup_user_data(
-    user_id: str,
+    user_id: str = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ):
     """Clear a user's vector store dataset (for account deletion).

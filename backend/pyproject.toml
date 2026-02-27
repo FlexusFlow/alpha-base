@@ -33,6 +33,7 @@ dependencies = [
     "youtube-transcript-api>=1.0.0",
     "yt-dlp>=2026.2.4",
     "supabase>=2.0",
+    "PyJWT>=2.8.0",
     "playwright>=1.58.0",
     "markdownify>=1.2.2",
 ]
@@ -41,4 +42,10 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.15.4",
 ]

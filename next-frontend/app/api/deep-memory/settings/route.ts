@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getServerAuthHeaders } from '@/lib/supabase/auth-token';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -11,8 +12,10 @@ export async function GET() {
   }
 
   try {
+    const authHeaders = await getServerAuthHeaders();
     const res = await fetch(
-      `${API_BASE_URL}/v1/api/deep-memory/settings?user_id=${user.id}`,
+      `${API_BASE_URL}/v1/api/deep-memory/settings`,
+      { headers: { ...authHeaders } },
     );
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
@@ -32,12 +35,12 @@ export async function PUT(request: NextRequest) {
   const body = await request.json();
 
   try {
+    const authHeaders = await getServerAuthHeaders();
     const res = await fetch(`${API_BASE_URL}/v1/api/deep-memory/settings`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders },
       body: JSON.stringify({
         enabled: body.enabled,
-        user_id: user.id,
       }),
     });
     const data = await res.json();

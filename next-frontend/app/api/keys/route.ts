@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { getServerAuthHeaders } from "@/lib/supabase/auth-token"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
@@ -11,9 +12,10 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const authHeaders = await getServerAuthHeaders()
   const res = await fetch(
-    `${API_BASE_URL}/v1/api/keys?user_id=${user.id}`,
-    { method: "GET" }
+    `${API_BASE_URL}/v1/api/keys`,
+    { method: "GET", headers: { ...authHeaders } }
   )
 
   const data = await res.json()
@@ -30,10 +32,11 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
 
+  const authHeaders = await getServerAuthHeaders()
   const res = await fetch(`${API_BASE_URL}/v1/api/keys`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...body, user_id: user.id }),
+    headers: { "Content-Type": "application/json", ...authHeaders },
+    body: JSON.stringify(body),
   })
 
   const data = await res.json()
@@ -55,9 +58,10 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "key_id required" }, { status: 400 })
   }
 
+  const authHeaders = await getServerAuthHeaders()
   const res = await fetch(
-    `${API_BASE_URL}/v1/api/keys/${keyId}?user_id=${user.id}`,
-    { method: "DELETE" }
+    `${API_BASE_URL}/v1/api/keys/${keyId}`,
+    { method: "DELETE", headers: { ...authHeaders } }
   )
 
   if (res.status === 204) {

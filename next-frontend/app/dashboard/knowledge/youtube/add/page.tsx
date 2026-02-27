@@ -144,7 +144,6 @@ function AddYouTubeChannelContent() {
       const response = await addToKnowledge({
         channel_title: preview.channel_title,
         videos: videosToProcess,
-        user_id: user.id,
       });
       setJobId(response.job_id);
       setPhase('processing');

@@ -1,7 +1,6 @@
 export interface KnowledgeAddRequest {
   channel_title: string;
   videos: { video_id: string; title: string }[];
-  user_id: string;
 }
 
 export interface KnowledgeAddResponse {
