@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { extractDomainFromFilename, normalizeDomain, getEarliestExpiry } from "@/lib/cookies";
+import { extractDomainFromFilename, normalizeDomain, getLatestExpiry } from "@/lib/cookies";
 import { CookieEntry } from "@/lib/types/cookies";
 
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     try {
       const cookieEntries: CookieEntry[] = JSON.parse(fileContent);
       if (Array.isArray(cookieEntries)) {
-        earliestExpiry = getEarliestExpiry(cookieEntries);
+        earliestExpiry = getLatestExpiry(cookieEntries);
       }
     } catch {
       // File isn't valid JSON array — continue without expiry data

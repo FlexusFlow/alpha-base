@@ -19,22 +19,24 @@ export function normalizeDomain(domain: string): string {
 }
 
 /**
- * Finds the earliest expiration timestamp from an array of cookie entries.
+ * Finds the latest expiration timestamp from an array of cookie entries.
+ * Uses the maximum expiry so short-lived session cookies don't mark
+ * the whole file as expired while long-lived auth cookies are still valid.
  * Returns an ISO date string or null if no expiry data is found.
  */
-export function getEarliestExpiry(
+export function getLatestExpiry(
   cookies: CookieEntry[]
 ): string | null {
-  let earliest: number | null = null;
+  let latest: number | null = null;
 
   for (const cookie of cookies) {
     if (cookie.expires && cookie.expires > 0) {
-      if (earliest === null || cookie.expires < earliest) {
-        earliest = cookie.expires;
+      if (latest === null || cookie.expires > latest) {
+        latest = cookie.expires;
       }
     }
   }
 
-  if (earliest === null) return null;
-  return new Date(earliest * 1000).toISOString();
+  if (latest === null) return null;
+  return new Date(latest * 1000).toISOString();
 }

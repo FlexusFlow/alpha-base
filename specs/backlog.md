@@ -11,6 +11,10 @@
 
 - **Deep Memory for RAG Accuracy (+22%)** — Train Deep Lake's Deep Memory feature on AlphaBase's dataset to boost retrieval accuracy by up to 22%. Trains a lightweight transformation layer on top of existing embeddings, adapting them to financial/trading domain. Steps: (1) generate question-chunk pairs from existing transcripts via LLM, (2) `db.deep_memory.train(queries, relevance)`, (3) enable `deep_memory=True` on search. Requires Cloud DeepLake migration first. Especially valuable for trading jargon, ticker symbols, and domain-specific terminology that generic embeddings handle poorly. See technote: `.technotes/deep-memory-rag-accuracy.md`
 
+## Priority: Medium
+
+- **Cookie Failure Detection & Status Marking** — When a scrape or transcription fails due to an authentication error (e.g., 403, Cloudflare challenge) while using stored cookies, mark the cookie record as compromised/invalid (e.g., `status = "failed"` on `user_cookies` table). Display a warning badge in the cookie management UI so the user knows to re-upload. Currently cookie expiry is optimistic (uses latest expiry from the file), so runtime failure detection is needed to catch revoked sessions or invalidated tokens.
+
 ## Existing Ideas
 
 - Add the ability to view the transcript of transcribed videos.
