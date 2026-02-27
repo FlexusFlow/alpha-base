@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 
@@ -38,6 +39,11 @@ NOISE_SELECTORS = [
     "[class*='social']",
 ]
 
+CHROME_USER_AGENT = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+)
+
 
 async def scrape_article(
     url: str, cookies_json: str | None = None
@@ -58,7 +64,7 @@ async def scrape_article(
     try:
         pw = await async_playwright().start()
         browser = await pw.chromium.launch(headless=True)
-        context = await browser.new_context()
+        context = await browser.new_context(user_agent=CHROME_USER_AGENT)
 
         if cookies_json:
             try:
@@ -70,6 +76,7 @@ async def scrape_article(
 
         page = await context.new_page()
         await page.goto(url, timeout=30_000, wait_until="domcontentloaded")
+        await asyncio.sleep(2)  # Allow JS-rendered content to appear
 
         # Strip noise elements
         for selector in NOISE_SELECTORS:

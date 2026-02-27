@@ -38,3 +38,6 @@ https://github.com/FlexusFlow/alpha-base/commit/3bee5231bef2feb86b9d83e60d91ea8d
 ## Recent Changes
 - feature/ALP-008-doc-scraping: Multi-page documentation site scraping — BFS discovery, concurrent scraping (3 workers), per-page status tracking, vector indexing, retry failed pages
 - feature/ALP-007-kb-user-isolation: Per-user knowledge base isolation with dedicated DeepLake datasets
+- feature/ALP-009-antibot-scraper-fingerprint: Anti-bot browser fingerprint — realistic Chrome user-agent and post-load delay for Cloudflare-protected sites
+- feature/ZIP-006-public-rag-api: Public RAG API with API key management and rate limiting; removed legacy frontend and POC scripts
+- feature/ZIP-005-failed-training-recovery: Phase-specific failure statuses, proceed/remove actions, expandable history rows, cloud-only gate
