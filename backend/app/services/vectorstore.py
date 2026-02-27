@@ -22,6 +22,10 @@ class VectorStoreService:
             chunk_size=settings.chunk_size,
             chunk_overlap=settings.chunk_overlap,
         )
+        if not settings.deeplake_path or not settings.activeloop_token:
+            raise RuntimeError(
+                "DEEPLAKE_PATH and ACTIVELOOP_TOKEN env vars are required for vector store operations"
+            )
         self.deeplake_path = settings.deeplake_path
         self._is_cloud = settings.deeplake_path.startswith("hub://")
         self._activeloop_token = settings.activeloop_token if self._is_cloud else None

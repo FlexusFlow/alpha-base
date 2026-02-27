@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from typing import List, Optional
 
 from dotenv import load_dotenv
 
@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     fe_host: str                   # will read from .env
     supabase_service_key: str      # will read from .env
     supabase_url: str              # will read from .env
-    deeplake_path: str             # will read from .env
-    activeloop_token: str          # will read from .env
+    deeplake_path: Optional[str] = None   # legacy global path; per-user datasets used since ALP-007
+    activeloop_token: Optional[str] = None  # will read from .env
     transcripts_dir: str = "./knowledge_base/transcripts"
     cors_origins: List[str] = []   # will be set from fe_host if not provided
     embedding_model: str = "text-embedding-3-small"
