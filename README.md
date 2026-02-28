@@ -10,17 +10,21 @@ Full-stack YouTube knowledge base app. Scrape YouTube channels, transcribe video
 | **Frontend** | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, shadcn/ui |
 | **Database** | Supabase (PostgreSQL + Auth + Storage) |
 | **Vector Store** | DeepLake Cloud with Deep Memory |
-| **AI Models** | GPT-4o (chat), text-embedding-3-small (embeddings) |
+| **AI Models** | GPT-4o (chat), Anthropic Claude Haiku/Sonnet (articles), text-embedding-3-small (embeddings) |
 
 ## Features
 
 - **YouTube scraping** — bulk-scrape channels (up to 500 videos), auto-categorize videos
 - **Transcription** — youtube-transcript-api with yt-dlp fallback
 - **RAG chat** — streaming responses via SSE, persistent chat projects
-- **Article scraping** — Playwright-based with AI summaries
+- **Article scraping** — Playwright-based with AI summaries (Anthropic Claude)
+- **Documentation site scraping** — multi-page discovery, concurrent scraping, per-page tracking, retry failed pages
 - **Cookie management** — access paywalled/private content
 - **Deep Memory training** — LLM-generated training data for +22% retrieval accuracy
 - **Public RAG API** — API key authentication, rate limiting (60 req/min)
+- **Per-user knowledge base isolation** — dedicated DeepLake datasets per user
+- **JWT auth middleware** — server-side Supabase token validation on all backend endpoints
+- **Anti-bot scraper fingerprint** — realistic browser fingerprint for Cloudflare-protected sites
 - **Auth** — login, signup, password reset, email verification via Supabase
 
 ## Project Structure
@@ -139,6 +143,9 @@ cd next-frontend && yarn lint
 | `POST` | `/v1/api/articles` | Scrape article |
 | `POST` | `/v1/api/articles/{id}/summarize` | AI article summary |
 | `POST` | `/v1/api/articles/{id}/chat` | Article Q&A |
+| `POST` | `/v1/api/docs/scrape` | Scrape documentation site |
+| `GET` | `/v1/api/docs/collections` | List doc collections |
+| `DELETE` | `/v1/api/docs/collections/{id}` | Delete doc collection |
 | `POST` | `/v1/api/api-keys` | Create API key |
 | `GET` | `/v1/api/api-keys` | List API keys |
 | `POST` | `/v1/api/public/query` | Public RAG API |
@@ -147,7 +154,7 @@ cd next-frontend && yarn lint
 
 ## Known Limitations
 
-- **Shared knowledge base** — The vectorized knowledge base (DeepLake) is not isolated per user. All users contribute to and consume the same shared vector store. Any user who adds YouTube channels or articles updates the knowledge base for everyone. Per-user isolation is in the backlog — the project was originally built for a single client.
+- None currently tracked.
 
 ## Deployment
 

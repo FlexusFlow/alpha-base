@@ -163,7 +163,6 @@
 - ZIP-005 Cloud-only gate — `is_cloud` field in settings response derived from `VectorStoreService._is_cloud`; when DeepLake is local, hides all Deep Memory page cards and shows warning to configure `hub://` path
 - ZIP-005 Correct resume progress — Fixed `total_chunks` computation on resume to include already-processed chunks (e.g., `51/80` not `51/30`)
 
-<<<<<<< HEAD
 ## Stage 13: Public RAG API + ClawHub Skill (ZIP-006)
 
 - ZIP-006 API key generation — Secure `zt_` prefixed keys (44+ chars) with SHA-256 hash storage, one-time full key display at creation, prefix-only shown afterward
@@ -194,12 +193,17 @@
 - ALP-008 Cookie support — Reuses ZIP-001/ZIP-002 cookie infrastructure for authenticated documentation sites, debounced domain check on URL input
 - ALP-008 Full page title as collection name — Uses entry page `<title>` as collection name instead of extracting a suffix; falls back to hostname if title is empty
 - ALP-008 Configurable log level — `LOG_LEVEL` env var (default INFO) configures Python logging via `logging.basicConfig()` in app startup
-=======
-## Stage 13: Anti-Bot Browser Fingerprint for Scraper (ALP-009)
+
+## Stage 16: Anti-Bot Browser Fingerprint for Scraper (ALP-009)
 
 - ALP-009 Realistic Chrome user-agent — Set `user_agent` on Playwright browser context to a real Chrome 131 macOS UA string, removing the `HeadlessChrome` token that triggered Cloudflare bot detection on sites like Medium
 - ALP-009 Post-load JS rendering delay — Added 2-second `asyncio.sleep()` after `page.goto()` DOM content loaded event, before content extraction, to allow JavaScript-rendered content (React hydration, lazy loading) to appear
 - ALP-009 No new dependencies — Both fixes use Playwright's built-in `new_context(user_agent=...)` option and Python stdlib `asyncio.sleep()`, requiring zero new packages
->>>>>>> ee49ee4 ([ALP-009] Add anti-bot browser fingerprint to article scraper)
+
+## Stage 17: JWT Auth Middleware (ALP-010)
+
+- ALP-010 Server-side JWT validation — `get_current_user` FastAPI dependency extracts `user_id` from Supabase Bearer tokens, replacing trust-the-client `user_id` fields in request bodies/query params
+- ALP-010 Frontend auth headers — Next.js API routes and client-side calls send `Authorization: Bearer <token>` headers instead of `user_id` in payloads
+- ALP-010 All routers updated — chat, knowledge, youtube, articles, deep memory, api-keys routers migrated to use `get_current_user` dependency
 
 ## Planned (Not Yet Implemented)
