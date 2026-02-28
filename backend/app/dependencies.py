@@ -1,6 +1,7 @@
 import logging
 from functools import lru_cache
 
+import jwt
 from fastapi import Depends, HTTPException, Request
 from supabase import create_client, Client
 
@@ -38,6 +39,48 @@ def get_supabase() -> Client:
 
 def get_rate_limiter() -> RateLimiter:
     return _rate_limiter
+
+
+async def get_current_user(
+    request: Request,
+    settings: Settings = Depends(get_settings),
+) -> str:
+    """FastAPI dependency: validate Supabase JWT and return user_id.
+
+    Extracts the Bearer token from the Authorization header, validates it
+    using the Supabase JWT secret, and returns the user's UUID from the
+    ``sub`` claim.
+
+    Raises:
+        HTTPException 401 for missing, invalid, or expired tokens.
+    """
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization header format")
+
+    token = auth_header.removeprefix("Bearer ").strip()
+
+    try:
+        payload = jwt.decode(
+            token,
+            settings.supabase_jwt_secret,
+            algorithms=["HS256"],
+            audience="authenticated",
+        )
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Authentication token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid authentication token")
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid authentication token")
+
+    return user_id
 
 
 async def verify_api_key(

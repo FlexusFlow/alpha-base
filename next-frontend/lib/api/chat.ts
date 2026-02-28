@@ -1,3 +1,4 @@
+import { getAuthHeaders } from '@/lib/api/auth-header'
 import { ChatRequest } from '@/lib/types/chat'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
@@ -9,11 +10,13 @@ export async function sendChatMessage(
   onError: (error: string) => void,
 ): Promise<void> {
   try {
+    const authHeaders = await getAuthHeaders()
     const response = await fetch(`${API_BASE_URL}/v1/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'text/event-stream',
+        ...authHeaders,
       },
       body: JSON.stringify(request),
     })

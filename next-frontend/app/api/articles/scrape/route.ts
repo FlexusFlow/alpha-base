@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getServerAuthHeaders } from '@/lib/supabase/auth-token';
 
 const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -60,14 +61,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const authHeaders = await getServerAuthHeaders();
     const backendResponse = await fetch(
       `${NEXT_PUBLIC_API_BASE_URL}/v1/api/articles/scrape`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           url,
-          user_id: user.id,
           use_cookies,
         }),
       },

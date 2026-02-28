@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getServerAuthHeaders } from '@/lib/supabase/auth-token';
 
 const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -15,12 +16,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { channel_ids } = body as { channel_ids: string[] };
 
+    const authHeaders = await getServerAuthHeaders();
     const backendResponse = await fetch(
       `${NEXT_PUBLIC_API_BASE_URL}/v1/api/knowledge/channels/delete-bulk`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel_ids, user_id: user.id }),
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
+        body: JSON.stringify({ channel_ids }),
       },
     );
 

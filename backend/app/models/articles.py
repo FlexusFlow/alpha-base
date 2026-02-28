@@ -8,7 +8,6 @@ from app.models.knowledge import JobStatus
 
 class ArticleScrapeRequest(BaseModel):
     url: str
-    user_id: str
     use_cookies: bool = True
 
 

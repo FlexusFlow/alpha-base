@@ -8,7 +8,7 @@ from supabase import Client
 logger = logging.getLogger(__name__)
 
 from app.config import Settings
-from app.dependencies import get_job_manager, get_settings, get_supabase
+from app.dependencies import get_current_user, get_job_manager, get_settings, get_supabase
 from app.models.knowledge import (
     BulkDeleteItemFailure,
     BulkDeleteItemSuccess,
@@ -135,6 +135,7 @@ async def process_knowledge_job(
 async def add_youtube_to_knowledge(
     request: KnowledgeAddRequest,
     background_tasks: BackgroundTasks,
+    user_id: str = Depends(get_current_user),
     job_manager: JobManager = Depends(get_job_manager),
     settings: Settings = Depends(get_settings),
     supabase: Client = Depends(get_supabase),
@@ -152,7 +153,7 @@ async def add_youtube_to_knowledge(
         job_manager=job_manager,
         settings=settings,
         supabase=supabase,
-        user_id=request.user_id,
+        user_id=user_id,
     )
     return KnowledgeAddResponse(
         job_id=job.id,
@@ -235,7 +236,7 @@ async def _delete_single_channel(
 @router.delete("/channels/{channel_id}", response_model=ChannelDeleteResponse)
 async def delete_channel(
     channel_id: str,
-    user_id: str,
+    user_id: str = Depends(get_current_user),
     job_manager: JobManager = Depends(get_job_manager),
     settings: Settings = Depends(get_settings),
     supabase: Client = Depends(get_supabase),
@@ -246,6 +247,7 @@ async def delete_channel(
 @router.post("/channels/delete-bulk", response_model=BulkDeleteResponse)
 async def delete_channels_bulk(
     request: BulkDeleteRequest,
+    user_id: str = Depends(get_current_user),
     job_manager: JobManager = Depends(get_job_manager),
     settings: Settings = Depends(get_settings),
     supabase: Client = Depends(get_supabase),
@@ -256,7 +258,7 @@ async def delete_channels_bulk(
     for channel_id in request.channel_ids:
         try:
             result = await _delete_single_channel(
-                channel_id, request.user_id, job_manager, settings, supabase,
+                channel_id, user_id, job_manager, settings, supabase,
             )
             succeeded.append(BulkDeleteItemSuccess(
                 channel_id=result.channel_id,
@@ -283,6 +285,7 @@ async def delete_channels_bulk(
 @router.get("/jobs/{job_id}", response_model=JobStatusResponse)
 async def get_job_status(
     job_id: str,
+    user_id: str = Depends(get_current_user),
     job_manager: JobManager = Depends(get_job_manager),
 ):
     job = job_manager.get_job(job_id)

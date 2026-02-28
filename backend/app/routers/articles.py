@@ -5,7 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from supabase import Client
 
 from app.config import Settings
-from app.dependencies import get_job_manager, get_settings, get_supabase
+from app.dependencies import get_current_user, get_job_manager, get_settings, get_supabase
 from app.models.articles import ArticleJob, ArticleScrapeRequest, ArticleScrapeResponse
 from app.models.knowledge import JobStatus
 from app.services.article_scraper import scrape_article
@@ -22,6 +22,7 @@ router = APIRouter(prefix="/v1/api/articles", tags=["articles"])
 async def scrape_article_endpoint(
     request: ArticleScrapeRequest,
     background_tasks: BackgroundTasks,
+    user_id: str = Depends(get_current_user),
     job_manager: JobManager = Depends(get_job_manager),
     settings: Settings = Depends(get_settings),
     supabase: Client = Depends(get_supabase),
@@ -32,16 +33,13 @@ async def scrape_article_endpoint(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    if not request.user_id:
-        raise HTTPException(status_code=401, detail="Missing user_id")
-
     # Create article record with pending status
     article_result = (
         supabase.table("articles")
         .insert(
             {
                 "url": request.url,
-                "user_id": request.user_id,
+                "user_id": user_id,
                 "status": "pending",
             }
         )
@@ -60,7 +58,7 @@ async def scrape_article_endpoint(
         job_id=job_id,
         article_id=article_id,
         url=request.url,
-        user_id=request.user_id,
+        user_id=user_id,
         use_cookies=request.use_cookies,
         job_manager=job_manager,
         supabase=supabase,

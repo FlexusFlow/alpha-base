@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getServerAuthHeaders } from '@/lib/supabase/auth-token';
 
 const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -17,9 +18,10 @@ export async function DELETE(
   }
 
   try {
+    const authHeaders = await getServerAuthHeaders();
     const backendResponse = await fetch(
-      `${NEXT_PUBLIC_API_BASE_URL}/v1/api/knowledge/channels/${channelId}?user_id=${user.id}`,
-      { method: 'DELETE' },
+      `${NEXT_PUBLIC_API_BASE_URL}/v1/api/knowledge/channels/${channelId}`,
+      { method: 'DELETE', headers: { ...authHeaders } },
     );
 
     const data = await backendResponse.json();
