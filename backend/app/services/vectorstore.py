@@ -38,7 +38,6 @@ class VectorStoreService:
             **extra,
         }
         if self._is_cloud:
-            kwargs["runtime"] = {"tensor_db": True}
             kwargs["token"] = self._activeloop_token
         return kwargs
 
@@ -245,7 +244,6 @@ async def cleanup_user_vectorstore(user_id: str, settings: Settings) -> None:
         "overwrite": True,
     }
     if is_cloud:
-        kwargs["runtime"] = {"tensor_db": True}
         kwargs["token"] = settings.activeloop_token
 
     await asyncio.to_thread(DeeplakeVectorStore, **kwargs)
