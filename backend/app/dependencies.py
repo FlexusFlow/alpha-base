@@ -2,6 +2,7 @@ import logging
 from functools import lru_cache
 
 import jwt
+from jwt import PyJWKClient
 from fastapi import Depends, HTTPException, Request
 from supabase import create_client, Client
 
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 _job_manager = JobManager()
 _supabase_client: Client | None = None
 _rate_limiter = RateLimiter(max_requests=60, window_seconds=60)
+_jwks_client: PyJWKClient | None = None
 
 
 @lru_cache
@@ -41,6 +43,14 @@ def get_rate_limiter() -> RateLimiter:
     return _rate_limiter
 
 
+def _get_jwks_client(supabase_url: str) -> PyJWKClient:
+    global _jwks_client
+    if _jwks_client is None:
+        jwks_url = f"{supabase_url}/auth/v1/.well-known/jwks.json"
+        _jwks_client = PyJWKClient(jwks_url, cache_keys=True)
+    return _jwks_client
+
+
 async def get_current_user(
     request: Request,
     settings: Settings = Depends(get_settings),
@@ -48,8 +58,8 @@ async def get_current_user(
     """FastAPI dependency: validate Supabase JWT and return user_id.
 
     Extracts the Bearer token from the Authorization header, validates it
-    using the Supabase JWT secret, and returns the user's UUID from the
-    ``sub`` claim.
+    using the Supabase JWKS public keys, and returns the user's UUID from
+    the ``sub`` claim.
 
     Raises:
         HTTPException 401 for missing, invalid, or expired tokens.
@@ -65,10 +75,12 @@ async def get_current_user(
     token = auth_header.removeprefix("Bearer ").strip()
 
     try:
+        jwks_client = _get_jwks_client(settings.supabase_url)
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
         payload = jwt.decode(
             token,
-            settings.supabase_jwt_secret,
-            algorithms=["HS256"],
+            signing_key.key,
+            algorithms=["ES256", "HS256"],
             audience="authenticated",
         )
     except jwt.ExpiredSignatureError:
