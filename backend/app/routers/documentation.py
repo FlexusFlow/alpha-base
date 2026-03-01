@@ -20,6 +20,7 @@ from app.models.documentation import (
 )
 from app.models.knowledge import JobStatus
 from app.services.cookie_service import get_cookies_for_domain
+from app.services.chunk_count import update_cached_chunk_count
 from app.services.doc_crawler import discover_pages
 from app.services.doc_scraper import scrape_collection
 from app.services.job_manager import JobManager
@@ -252,6 +253,8 @@ async def delete_collection(
         vs = get_user_vectorstore(user_id, settings)
         deleted_count = vs.delete_by_collection_id(collection_id)
         vectors_deleted = deleted_count > 0
+        if deleted_count > 0:
+            update_cached_chunk_count(supabase, user_id, -deleted_count)
         logger.info("Deleted %d vector chunks for collection %s", deleted_count, collection_id)
     except Exception as e:
         logger.warning("Failed to delete vectors for collection %s: %s", collection_id, e)

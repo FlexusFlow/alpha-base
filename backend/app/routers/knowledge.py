@@ -20,6 +20,7 @@ from app.models.knowledge import (
     KnowledgeAddRequest,
     KnowledgeAddResponse,
 )
+from app.services.chunk_count import update_cached_chunk_count
 from app.services.cookie_service import get_cookies_for_domain
 from app.services.job_manager import JobManager
 from app.services.transcriber import delete_transcripts, get_transcript, save_transcript_md
@@ -96,9 +97,11 @@ async def process_knowledge_job(
     if transcripts:
         try:
             vectorstore = get_user_vectorstore(user_id, settings)
-            await asyncio.to_thread(
+            chunks_added = await asyncio.to_thread(
                 vectorstore.add_documents, transcripts, metadatas
             )
+            if chunks_added > 0:
+                update_cached_chunk_count(supabase, user_id, chunks_added)
         except Exception as e:
             job_manager.update_job(
                 job_id,
@@ -203,6 +206,8 @@ async def _delete_single_channel(
         try:
             vectorstore = get_user_vectorstore(user_id, settings)
             vectors_deleted = await asyncio.to_thread(vectorstore.delete_by_video_ids, video_ids)
+            if vectors_deleted > 0:
+                update_cached_chunk_count(supabase, user_id, -vectors_deleted)
         except Exception as e:
             raise HTTPException(
                 status_code=500,

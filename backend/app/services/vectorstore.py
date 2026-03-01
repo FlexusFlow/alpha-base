@@ -41,8 +41,11 @@ class VectorStoreService:
             kwargs["token"] = self._activeloop_token
         return kwargs
 
-    def add_documents(self, texts: list[str], metadatas: list[dict]) -> None:
-        """Batch add documents to DeepLake. Splits texts into chunks first."""
+    def add_documents(self, texts: list[str], metadatas: list[dict]) -> int:
+        """Batch add documents to DeepLake. Splits texts into chunks first.
+
+        Returns the number of chunks added.
+        """
         all_chunks: list[str] = []
         all_metas: list[dict] = []
 
@@ -52,7 +55,7 @@ class VectorStoreService:
             all_metas.extend([meta] * len(chunks))
 
         if not all_chunks:
-            return
+            return 0
 
         db = DeeplakeVectorStore(**self._get_db_kwargs(overwrite=False))
         db.add_texts(
@@ -61,6 +64,7 @@ class VectorStoreService:
             embedding=self.embeddings,
             dataset_path=self.deeplake_path,
         )
+        return len(all_chunks)
 
     def delete_by_video_ids(self, video_ids: list[str]) -> int:
         """Delete all vector chunks matching the given video_ids from DeepLake."""
@@ -86,7 +90,7 @@ class VectorStoreService:
         collection_id: str,
         site_name: str,
         user_id: str,
-    ) -> None:
+    ) -> int:
         """Index documentation pages into DeepLake with documentation-specific metadata.
 
         Args:
@@ -94,6 +98,8 @@ class VectorStoreService:
             collection_id: UUID of the doc_collection
             site_name: Name of the documentation site
             user_id: Owner user ID
+
+        Returns the number of chunks added.
         """
         texts = []
         metadatas = []
@@ -110,7 +116,8 @@ class VectorStoreService:
                 "source": page["page_url"],
             })
         if texts:
-            self.add_documents(texts, metadatas)
+            return self.add_documents(texts, metadatas)
+        return 0
 
     def delete_by_collection_id(self, collection_id: str) -> int:
         """Delete all vector chunks matching a documentation collection_id."""
