@@ -39,9 +39,10 @@ def _cleanup():
 # ---------------------------------------------------------------------------
 
 
+@patch("app.routers.user_cleanup.reset_cached_chunk_count")
 @patch("app.routers.user_cleanup.cleanup_user_vectorstore", new_callable=AsyncMock)
 @patch("app.dependencies._get_jwks_client", return_value=_mock_jwks)
-def test_protected_endpoint_succeeds_with_valid_token(mock_jwks, mock_cleanup):
+def test_protected_endpoint_succeeds_with_valid_token(mock_jwks, mock_cleanup, mock_reset):
     """A request with a valid JWT should reach the endpoint and return 200."""
     mock_cleanup.return_value = None
     client = _make_client()
@@ -70,9 +71,10 @@ def test_protected_endpoint_rejects_missing_token(mock_jwks, mock_cleanup):
         _cleanup()
 
 
+@patch("app.routers.user_cleanup.reset_cached_chunk_count")
 @patch("app.routers.user_cleanup.cleanup_user_vectorstore", new_callable=AsyncMock)
 @patch("app.dependencies._get_jwks_client", return_value=_mock_jwks)
-def test_token_user_id_is_used_regardless_of_body(mock_jwks, mock_cleanup):
+def test_token_user_id_is_used_regardless_of_body(mock_jwks, mock_cleanup, mock_reset):
     """Even if a request body contained a user_id, the JWT sub claim wins."""
     mock_cleanup.return_value = None
     client = _make_client()

@@ -26,6 +26,8 @@ from app.services.deep_memory_service import train_deep_memory
 from app.services.training_generator import generate_training_data
 from app.services.vectorstore import get_user_vectorstore
 
+# is_cloud is derived from config — no need to instantiate DeepLake at request time
+
 router = APIRouter(prefix="/v1/api/deep-memory", tags=["deep-memory"])
 
 
@@ -349,10 +351,11 @@ async def get_settings_endpoint(
     ).eq("user_id", user_id).eq("status", "completed").execute()
     can_enable = (completed_result.count or 0) > 0
 
-    # Get total chunks from user's vector store (lightweight count, no text loading)
-    vectorstore = get_user_vectorstore(user_id, settings)
-    is_cloud = vectorstore._is_cloud
-    total_chunks = await asyncio.to_thread(vectorstore.get_chunk_count)
+    # Read cached total_chunks from DB; derive is_cloud from config
+    is_cloud = (settings.deeplake_path or "").startswith("hub://")
+    total_chunks = 0
+    if settings_result.data:
+        total_chunks = settings_result.data[0].get("total_chunks") or 0
 
     # Get trained chunk count from last completed run
     trained_chunk_count = 0

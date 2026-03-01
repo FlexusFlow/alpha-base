@@ -7,6 +7,7 @@ from app.config import Settings
 from app.models.documentation import DocScrapeJob
 from app.models.knowledge import JobStatus
 from app.services.article_scraper import scrape_article
+from app.services.chunk_count import update_cached_chunk_count
 from app.services.cookie_service import get_cookies_for_domain
 from app.services.job_manager import JobManager
 from app.services.vectorstore import get_user_vectorstore
@@ -137,15 +138,18 @@ async def scrape_collection(
                 site_name = site_name_result.data[0]["site_name"] if site_name_result.data else "Documentation"
 
                 vs = get_user_vectorstore(user_id, settings)
-                vs.add_documentation_pages(
+                chunks_added = vs.add_documentation_pages(
                     pages=successful_pages_data,
                     collection_id=collection_id,
                     site_name=site_name,
                     user_id=user_id,
                 )
+                if chunks_added > 0:
+                    update_cached_chunk_count(supabase, user_id, chunks_added)
                 logger.info(
-                    "Indexed %d documentation pages for collection %s",
+                    "Indexed %d documentation pages (%d chunks) for collection %s",
                     len(successful_pages_data),
+                    chunks_added,
                     collection_id,
                 )
             except Exception as e:
