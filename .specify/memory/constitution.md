@@ -1,17 +1,10 @@
 <!--
 Sync Impact Report
 ===================
-Version change: 1.5.0 → 1.7.0
+Version change: 1.8.0 → 1.9.0
 
-Modified principles:
-- Principle I: Python 3.11+ → 3.12+
-- Principle II: Added public RAG API layer (ZIP-006)
-
-Added sections:
-- Principle VI: Per-User Data Isolation (ALP-007)
-
-Removed sections:
-- Known Limitations → "Shared vector store" removed (resolved by ALP-007)
+Modified sections:
+- Known Limitations: Removed "No FastAPI auth middleware" (resolved by ALP-010)
 
 Templates requiring updates:
 - ⚠ No .specify/templates/ found in repo (templates directory absent)
@@ -96,7 +89,7 @@ All user data MUST be isolated at every layer:
 
 ## Known Limitations
 
-- **No FastAPI auth middleware**: Backend endpoints accept `user_id` from request body/query params. While Next.js API routes inject the authenticated user's ID, FastAPI endpoints themselves are unauthenticated — any direct caller can pass any `user_id`. JWT validation middleware is in the backlog.
+- None currently tracked. JWT auth middleware was added in ALP-010 and per-user data isolation in ALP-007.
 
 ## Governance
 
@@ -104,9 +97,10 @@ All user data MUST be isolated at every layer:
 - All PRs MUST be reviewed against these principles.
 - When a principle conflicts with shipping speed, document the trade-off explicitly in the PR description.
 
-**Version**: 1.8.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-27
+**Version**: 1.9.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-28
 
 ### Amendment Log
+- **1.9.0** (2026-02-28): Removed "No FastAPI auth middleware" from Known Limitations — ALP-010 added JWT auth middleware with `get_current_user` dependency that validates Supabase Bearer tokens server-side, replacing trust-the-client `user_id` fields across all routers.
 - **1.8.0** (2026-02-27): Added Playwright + markdownify to Technology Stack for web scraping (articles & documentation); updated Principle IV to list documentation scraping as a long-running operation (ALP-008).
 - **1.7.0** (2026-02-27): Added Principle VI (Per-User Data Isolation) — ALP-007 implemented per-user DeepLake datasets via `get_user_vectorstore()`; removed "shared vector store" from Known Limitations; updated Known Limitations to document missing FastAPI auth middleware.
 - **1.6.0** (2026-02-27): Documented ZIP-006 public RAG API in Principle II and Technology Stack — public endpoints under `/v1/public/` with API key auth and rate limiting; updated Python version 3.11+ → 3.12+; removed `poc/` from monorepo structure (deleted in ZIP-006).
