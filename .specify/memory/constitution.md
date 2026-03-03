@@ -1,10 +1,10 @@
 <!--
 Sync Impact Report
 ===================
-Version change: 1.8.0 → 1.9.0
+Version change: 1.9.0 → 1.10.0
 
 Modified sections:
-- Known Limitations: Removed "No FastAPI auth middleware" (resolved by ALP-010)
+- Amendment Log: Added ALP-011 cookie failure detection entry
 
 Templates requiring updates:
 - ⚠ No .specify/templates/ found in repo (templates directory absent)
@@ -97,9 +97,10 @@ All user data MUST be isolated at every layer:
 - All PRs MUST be reviewed against these principles.
 - When a principle conflicts with shipping speed, document the trade-off explicitly in the PR description.
 
-**Version**: 1.9.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-28
+**Version**: 1.10.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-03-03
 
 ### Amendment Log
+- **1.10.0** (2026-03-03): Added cookie runtime failure detection to Principle IV context — scraping/transcription paths now detect auth failures (HTTP 403, Cloudflare challenges, soft paywalls) and mark cookie records as "failed" with auto-recovery on subsequent success (ALP-011).
 - **1.9.0** (2026-02-28): Removed "No FastAPI auth middleware" from Known Limitations — ALP-010 added JWT auth middleware with `get_current_user` dependency that validates Supabase Bearer tokens server-side, replacing trust-the-client `user_id` fields across all routers.
 - **1.8.0** (2026-02-27): Added Playwright + markdownify to Technology Stack for web scraping (articles & documentation); updated Principle IV to list documentation scraping as a long-running operation (ALP-008).
 - **1.7.0** (2026-02-27): Added Principle VI (Per-User Data Isolation) — ALP-007 implemented per-user DeepLake datasets via `get_user_vectorstore()`; removed "shared vector store" from Known Limitations; updated Known Limitations to document missing FastAPI auth middleware.
