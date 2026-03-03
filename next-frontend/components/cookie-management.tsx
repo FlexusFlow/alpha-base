@@ -15,15 +15,36 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { UserCookie } from "@/lib/types/cookies";
 
-function getExpiryBadge(earliestExpiry: string | null) {
-  if (!earliestExpiry) {
+function getStatusBadge(cookie: UserCookie) {
+  // Failed status takes highest priority
+  if (cookie.status === "failed") {
+    return (
+      <Badge variant="destructive" title={cookie.failure_reason || "Authentication failed"}>
+        Failed
+      </Badge>
+    );
+  }
+  if (!cookie.earliest_expiry) {
     return <Badge variant="secondary">Unknown</Badge>;
   }
-  const expiryDate = new Date(earliestExpiry);
+  const expiryDate = new Date(cookie.earliest_expiry);
   if (expiryDate > new Date()) {
     return <Badge className="bg-green-600 hover:bg-green-600/80 text-white border-transparent">Active</Badge>;
   }
   return <Badge variant="destructive">Expired</Badge>;
+}
+
+function formatRelativeTime(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
 }
 
 function formatDate(dateString: string) {
@@ -167,7 +188,17 @@ export function CookieManagement() {
                 <TableCell className="font-medium">{cookie.domain}</TableCell>
                 <TableCell>{cookie.filename}</TableCell>
                 <TableCell>{formatDate(cookie.created_at)}</TableCell>
-                <TableCell>{getExpiryBadge(cookie.earliest_expiry)}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    {getStatusBadge(cookie)}
+                    {cookie.status === "failed" && cookie.failed_at && (
+                      <span className="text-xs text-muted-foreground">
+                        {formatRelativeTime(cookie.failed_at)}
+                        {cookie.failure_reason && ` — ${cookie.failure_reason}`}
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <Button
                     variant="ghost"

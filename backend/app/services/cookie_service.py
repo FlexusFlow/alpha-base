@@ -1,9 +1,20 @@
 import logging
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 from supabase import Client
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class CookieResult:
+    """Result of a cookie lookup, containing the record ID for failure attribution."""
+
+    cookie_id: str
+    domain: str
+    cookies_json: str
 
 
 def _extract_domain(url: str) -> str:
@@ -38,11 +49,11 @@ async def get_cookies_for_domain(
     user_id: str,
     target_url: str,
     supabase: Client,
-) -> str | None:
+) -> CookieResult | None:
     """Fetch user's cookies for the domain of target_url from Supabase Storage.
 
-    Returns the cookie file content as a JSON string (CookieEntry[]),
-    or None if no cookies found or on any error.
+    Returns a CookieResult with the cookie record ID, matched domain, and
+    cookie file content as a JSON string — or None if no cookies found.
     """
     try:
         domain = _normalize_domain(_extract_domain(target_url))
@@ -55,19 +66,25 @@ async def get_cookies_for_domain(
         for d in domains_to_try:
             result = (
                 supabase.table("user_cookies")
-                .select("file_path")
+                .select("id, domain, file_path")
                 .eq("user_id", user_id)
                 .eq("domain", d)
                 .execute()
             )
             if result.data:
-                file_path = result.data[0]["file_path"]
-                file_bytes = supabase.storage.from_("cookie-files").download(file_path)
+                row = result.data[0]
+                file_bytes = supabase.storage.from_("cookie-files").download(
+                    row["file_path"]
+                )
                 cookie_content = file_bytes.decode("utf-8")
                 logger.info(
                     "Found cookies for domain %s for user %s", d, user_id
                 )
-                return cookie_content
+                return CookieResult(
+                    cookie_id=row["id"],
+                    domain=row["domain"],
+                    cookies_json=cookie_content,
+                )
 
         logger.debug("No cookies found for domain %s for user %s", domain, user_id)
         return None
@@ -77,3 +94,22 @@ async def get_cookies_for_domain(
             "Failed to download/parse cookies for URL %s: %s", target_url, e
         )
         return None
+
+
+def mark_cookie_failed(cookie_id: str, reason: str, supabase: Client) -> None:
+    """Mark a cookie record as failed with a timestamp and reason."""
+    supabase.table("user_cookies").update({
+        "status": "failed",
+        "failed_at": datetime.now(timezone.utc).isoformat(),
+        "failure_reason": reason[:200],
+    }).eq("id", cookie_id).execute()
+    logger.info("Marked cookie %s as failed: %s", cookie_id, reason[:100])
+
+
+def clear_cookie_failure(cookie_id: str, supabase: Client) -> None:
+    """Clear failure state from a cookie record (idempotent)."""
+    supabase.table("user_cookies").update({
+        "status": None,
+        "failed_at": None,
+        "failure_reason": None,
+    }).eq("id", cookie_id).execute()
