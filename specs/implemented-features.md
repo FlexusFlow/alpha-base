@@ -206,4 +206,17 @@
 - ALP-010 Frontend auth headers — Next.js API routes and client-side calls send `Authorization: Bearer <token>` headers instead of `user_id` in payloads
 - ALP-010 All routers updated — chat, knowledge, youtube, articles, deep memory, api-keys routers migrated to use `get_current_user` dependency
 
+## Stage 18: Cookie Failure Detection & Status Marking (ALP-011)
+
+- ALP-011 Auth failure detection — `AuthenticationError` exception class with `domain` and `error_type` fields, raised on HTTP 403, Cloudflare challenges, yt-dlp login-required errors across all scraping paths (YouTube transcription, article scraping, documentation scraping)
+- ALP-011 Cloudflare challenge detection — `is_cloudflare_challenge(html)` checks for 2+ Cloudflare fingerprints (title patterns, challenge-running IDs, cdn-cgi scripts) to distinguish CF challenges from other 403s
+- ALP-011 yt-dlp auth error detection — `is_auth_error(error)` matches 7 regex patterns (Sign in, 403, login required, confirm age, members-only, requires payment, bot detection) against yt-dlp `DownloadError` messages
+- ALP-011 Soft paywall detection — 6-layer JavaScript-based detection (`PAYWALL_DETECT_JS`) executed via Playwright when cookies are provided: CSS class selectors (14 patterns), data attributes/IDs (8 selectors), text signals (27 phrases in EN/DE/FR), meta tags + JSON-LD (`isAccessibleForFree`), external paywall service scripts (8 providers), content truncation heuristic (read-time vs actual word count). Requires 1+ strong signal or 2+ weak signals to avoid false positives.
+- ALP-011 Cookie failure marking — `mark_cookie_failed(cookie_id, reason, supabase)` sets `status='failed'`, `failed_at=now()`, `failure_reason` (truncated to 200 chars) on `user_cookies` row; once-per-job flag prevents redundant DB updates
+- ALP-011 Cookie failure recovery — `clear_cookie_failure(cookie_id, supabase)` idempotently resets `status`, `failed_at`, `failure_reason` to NULL after successful cookie use
+- ALP-011 CookieResult dataclass — Replaced raw `str | None` return from `get_cookies_for_domain` with `CookieResult(cookie_id, domain, cookies_json)` to enable failure attribution back to specific cookie records
+- ALP-011 Database migration — Added `status` (TEXT, CHECK NULL or 'failed'), `failed_at` (TIMESTAMPTZ), `failure_reason` (TEXT) columns to `user_cookies` table with UPDATE RLS policy
+- ALP-011 Failed cookie badge — Cookie management UI shows "Failed" badge (destructive variant, highest priority over Active/Expired/Unknown) with failure reason tooltip and relative timestamp (e.g., "2h ago — Paywall detected")
+- ALP-011 All scraping paths wired — YouTube transcription (`knowledge.py`), article scraping (`articles.py`), and documentation scraping (`doc_scraper.py`) catch `AuthenticationError`, mark cookies as failed, and clear failure on success
+
 ## Planned (Not Yet Implemented)

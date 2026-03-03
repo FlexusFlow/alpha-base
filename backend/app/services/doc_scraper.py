@@ -8,7 +8,8 @@ from app.models.documentation import DocScrapeJob
 from app.models.knowledge import JobStatus
 from app.services.article_scraper import scrape_article
 from app.services.chunk_count import update_cached_chunk_count
-from app.services.cookie_service import get_cookies_for_domain
+from app.models.errors import AuthenticationError
+from app.services.cookie_service import clear_cookie_failure, get_cookies_for_domain, mark_cookie_failed
 from app.services.job_manager import JobManager
 from app.services.vectorstore import get_user_vectorstore
 
@@ -45,15 +46,18 @@ async def scrape_collection(
     ).eq("id", collection_id).execute()
 
     # Fetch cookies once for all pages
-    cookies_json = None
+    cookie_result = None
     if use_cookies:
         entry_url = pages[0]["url"] if pages else ""
-        cookies_json = await get_cookies_for_domain(user_id, entry_url, supabase)
+        cookie_result = await get_cookies_for_domain(user_id, entry_url, supabase)
+    cookies_json = cookie_result.cookies_json if cookie_result else None
 
     semaphore = asyncio.Semaphore(MAX_CONCURRENT)
     successful_pages_data: list[dict] = []
+    cookie_marked_failed = False
 
     async def scrape_page(page_info: dict) -> None:
+        nonlocal cookie_marked_failed
         page_id = page_info["id"]
         page_url = page_info["url"]
 
@@ -80,6 +84,25 @@ async def scrape_collection(
                     "title": result["title"] or page_info.get("title", ""),
                     "content_markdown": result["content_markdown"],
                 })
+
+                # Clear cookie failure on successful use
+                if cookie_result:
+                    clear_cookie_failure(cookie_result.cookie_id, supabase)
+
+            except AuthenticationError as e:
+                error_msg = str(e)[:500]
+                logger.warning("Auth failure scraping page %s: %s", page_url, error_msg)
+
+                if cookie_result and not cookie_marked_failed:
+                    mark_cookie_failed(cookie_result.cookie_id, str(e)[:200], supabase)
+                    cookie_marked_failed = True
+
+                supabase.table("doc_pages").update({
+                    "status": "failed",
+                    "error_message": error_msg,
+                }).eq("id", page_id).execute()
+
+                doc_job.failed_pages.append(page_id)
 
             except Exception as e:
                 error_msg = str(e)[:500]

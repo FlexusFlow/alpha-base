@@ -20,8 +20,9 @@ from app.models.knowledge import (
     KnowledgeAddRequest,
     KnowledgeAddResponse,
 )
+from app.models.errors import AuthenticationError
 from app.services.chunk_count import update_cached_chunk_count
-from app.services.cookie_service import get_cookies_for_domain
+from app.services.cookie_service import clear_cookie_failure, get_cookies_for_domain, mark_cookie_failed
 from app.services.job_manager import JobManager
 from app.services.transcriber import delete_transcripts, get_transcript, save_transcript_md
 from app.services.vectorstore import get_user_vectorstore
@@ -42,16 +43,18 @@ async def process_knowledge_job(
     job_manager.update_job(job_id, status=JobStatus.IN_PROGRESS)
     transcripts: list[str] = []
     metadatas: list[dict] = []
+    cookie_marked_failed = False
 
     for i, video in enumerate(videos):
         try:
-            cookie_str = None
+            cookie_result = None
             if user_id:
                 youtube_url = f"https://www.youtube.com/watch?v={video.video_id}"
-                cookie_str = await get_cookies_for_domain(user_id, youtube_url, supabase)
+                cookie_result = await get_cookies_for_domain(user_id, youtube_url, supabase)
 
             text = await asyncio.to_thread(
-                get_transcript, video.video_id, video.title, cookie_str
+                get_transcript, video.video_id, video.title,
+                cookie_result.cookies_json if cookie_result else None,
             )
             save_transcript_md(
                 video.video_id, video.title, text,
@@ -71,11 +74,23 @@ async def process_knowledge_job(
                 ).eq("video_id", video.video_id).execute()
             except Exception as db_err:
                 logger.error("Failed to mark video %s as transcribed: %s", video.video_id, db_err)
+            # Clear cookie failure on successful use
+            if cookie_result:
+                clear_cookie_failure(cookie_result.cookie_id, supabase)
             # Track successful transcription
             job = job_manager.get_job(job_id)
             succeeded = list(job.succeeded_videos) if job else []
             succeeded.append(video.video_id)
             job_manager.update_job(job_id, succeeded_videos=succeeded)
+        except AuthenticationError as e:
+            logger.error("Auth failure transcribing video %s: %s", video.video_id, e)
+            if cookie_result and not cookie_marked_failed:
+                mark_cookie_failed(cookie_result.cookie_id, str(e)[:200], supabase)
+                cookie_marked_failed = True
+            job = job_manager.get_job(job_id)
+            failed = list(job.failed_videos) if job else []
+            failed.append(video.video_id)
+            job_manager.update_job(job_id, failed_videos=failed)
         except Exception as e:
             logger.error("Failed to transcribe video %s: %s", video.video_id, e)
             job = job_manager.get_job(job_id)

@@ -3,6 +3,8 @@
 Full-stack YouTube knowledge base app. All rules live in `.claude/rules/`.
 
 <!-- MANUAL ADDITIONS START -->
+## Communication
+- Always respond in English, even if the user writes in another language (e.g., Russian). Only switch language if explicitly asked.
 <!-- MANUAL ADDITIONS END -->
 
 ## Tech Notes (`.local/.technotes/`)
@@ -36,9 +38,6 @@ https://github.com/FlexusFlow/alpha-base/commit/3bee5231bef2feb86b9d83e60d91ea8d
   ```
 
 ## Recent Changes
+- feature/ALP-011-cookie-failure-detection: Cookie failure detection — auto-marks cookies as "failed" on auth errors (403, Cloudflare, paywall), 6-layer soft-paywall detection, "Failed" badge in cookie management UI, auto-recovery on successful use
 - feature/ALP-010-fastapi-auth-middleware: JWT auth middleware — backend validates Supabase Bearer tokens server-side, replaced trust-the-client user_id fields
 - feature/ALP-009-antibot-scraper-fingerprint: Anti-bot browser fingerprint — realistic Chrome user-agent and post-load delay for Cloudflare-protected sites
-- feature/ALP-008-doc-scraping: Multi-page documentation site scraping — BFS discovery, concurrent scraping (3 workers), per-page status tracking, vector indexing, retry failed pages
-- feature/ALP-007-kb-user-isolation: Per-user knowledge base isolation with dedicated DeepLake datasets
-- feature/ZIP-006-public-rag-api: Public RAG API with API key management and rate limiting; removed legacy frontend and POC scripts
-- feature/ZIP-005-failed-training-recovery: Phase-specific failure statuses, proceed/remove actions, expandable history rows, cloud-only gate

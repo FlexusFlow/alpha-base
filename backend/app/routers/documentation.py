@@ -50,10 +50,12 @@ async def discover_documentation(
     cookies_json = None
     has_cookies = False
     if request.use_cookies:
-        cookies_json = await get_cookies_for_domain(
+        cookie_result = await get_cookies_for_domain(
             request.user_id, request.url, supabase
         )
-        has_cookies = cookies_json is not None
+        if cookie_result:
+            cookies_json = cookie_result.cookies_json
+            has_cookies = True
 
     result = await discover_pages(request.url, cookies_json=cookies_json)
 

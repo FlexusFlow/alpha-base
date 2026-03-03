@@ -9,7 +9,8 @@ from app.dependencies import get_current_user, get_job_manager, get_settings, ge
 from app.models.articles import ArticleJob, ArticleScrapeRequest, ArticleScrapeResponse
 from app.models.knowledge import JobStatus
 from app.services.article_scraper import scrape_article
-from app.services.cookie_service import get_cookies_for_domain
+from app.models.errors import AuthenticationError
+from app.services.cookie_service import clear_cookie_failure, get_cookies_for_domain, mark_cookie_failed
 from app.services.job_manager import JobManager
 from app.services.url_validator import validate_url
 
@@ -93,12 +94,14 @@ async def process_article_scrape(
         ).execute()
 
         # Fetch cookies if requested
-        cookies_json = None
+        cookie_result = None
         if use_cookies:
-            cookies_json = await get_cookies_for_domain(user_id, url, supabase)
+            cookie_result = await get_cookies_for_domain(user_id, url, supabase)
 
         # Scrape the article
-        result = await scrape_article(url, cookies_json=cookies_json)
+        result = await scrape_article(
+            url, cookies_json=cookie_result.cookies_json if cookie_result else None
+        )
 
         # Update article record with content
         supabase.table("articles").update(
@@ -110,10 +113,37 @@ async def process_article_scrape(
             }
         ).eq("id", article_id).execute()
 
+        # Clear cookie failure on successful use
+        if cookie_result:
+            clear_cookie_failure(cookie_result.cookie_id, supabase)
+
         # Update job status
         article_job.status = JobStatus.COMPLETED
         article_job.message = f"Article scraped: {result['title'] or url}"
         job_manager._notify(job_id, article_job)
+
+    except AuthenticationError as e:
+        logger.error("Auth failure scraping article %s: %s", url, e)
+
+        # Mark cookie as failed
+        if cookie_result:
+            mark_cookie_failed(cookie_result.cookie_id, str(e)[:200], supabase)
+
+        # Update article to failed status
+        error_msg = str(e)[:500]
+        supabase.table("articles").update(
+            {
+                "status": "failed",
+                "error_message": error_msg,
+            }
+        ).eq("id", article_id).execute()
+
+        # Update job status
+        article_job = job_manager._jobs.get(job_id)
+        if article_job:
+            article_job.status = JobStatus.FAILED
+            article_job.message = f"Failed to scrape article: {error_msg}"
+            job_manager._notify(job_id, article_job)
 
     except Exception as e:
         logger.exception("Article scraping failed for %s: %s", url, e)

@@ -1,11 +1,17 @@
 import json
+import logging
 import tempfile
 from pathlib import Path
 
 import yt_dlp
+from yt_dlp.utils import DownloadError
 from youtube_transcript_api import YouTubeTranscriptApi
 
+from app.models.errors import AuthenticationError
+from app.services.auth_detection import is_auth_error
 from app.utils.text import parse_vtt, sanitize_filename
+
+logger = logging.getLogger(__name__)
 
 
 class TranscriptionError(Exception):
@@ -89,6 +95,15 @@ def get_transcript_via_ytdlp(video_id: str, cookie: str | None = None) -> str | 
 
         return parse_vtt(vtt_content)
 
+    except DownloadError as e:
+        if is_auth_error(e):
+            raise AuthenticationError(
+                message=str(e),
+                domain="youtube.com",
+                error_type="login_required",
+            ) from e
+        logger.warning("yt-dlp non-auth error for %s: %s", video_id, e)
+        return None
     except Exception:
         return None
     finally:

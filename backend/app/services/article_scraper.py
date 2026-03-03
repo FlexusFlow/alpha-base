@@ -1,9 +1,13 @@
 import asyncio
 import json
 import logging
+from urllib.parse import urlparse
 
 from markdownify import markdownify
 from playwright.async_api import async_playwright
+
+from app.models.errors import AuthenticationError
+from app.services.auth_detection import PAYWALL_DETECT_JS, is_cloudflare_challenge
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +79,44 @@ async def scrape_article(
                 logger.warning("Failed to parse/inject cookies: %s", e)
 
         page = await context.new_page()
-        await page.goto(url, timeout=30_000, wait_until="domcontentloaded")
+        response = await page.goto(url, timeout=30_000, wait_until="domcontentloaded")
         await asyncio.sleep(2)  # Allow JS-rendered content to appear
+
+        # Check for authentication failures
+        domain = urlparse(url).hostname or ""
+        if response and response.status == 403:
+            page_html = await page.content()
+            if is_cloudflare_challenge(page_html):
+                raise AuthenticationError(
+                    message="Cloudflare challenge detected (403)",
+                    domain=domain,
+                    error_type="cloudflare_challenge",
+                )
+            raise AuthenticationError(
+                message=f"HTTP 403 Forbidden from {domain}",
+                domain=domain,
+                error_type="http_403",
+            )
+
+        # Check for Cloudflare challenge on non-403 responses (some use 503 or JS redirect)
+        page_html = await page.content()
+        if is_cloudflare_challenge(page_html):
+            raise AuthenticationError(
+                message="Cloudflare challenge page detected",
+                domain=domain,
+                error_type="cloudflare_challenge",
+            )
+
+        # Check for soft paywall (site returns 200 but truncated content).
+        # Only relevant when cookies were provided — it means they didn't work.
+        if cookies_json:
+            paywall_reason = await page.evaluate(PAYWALL_DETECT_JS)
+            if paywall_reason:
+                raise AuthenticationError(
+                    message=f"Paywall detected ({paywall_reason}) — cookies may be expired",
+                    domain=domain,
+                    error_type="paywall",
+                )
 
         # Strip noise elements
         for selector in NOISE_SELECTORS:
