@@ -7,7 +7,7 @@ from app.config import Settings
 from app.dependencies import get_settings, get_supabase, verify_api_key
 from app.models.api_keys import PublicQueryRequest, PublicQueryResponse
 from app.services.api_key_service import APIKeyService
-from app.services.chat import ChatService
+from app.services.public_chat import PublicChatService
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ async def public_query(
     key_service = APIKeyService(supabase)
 
     try:
-        chat_service = ChatService(settings, supabase=supabase)
+        chat_service = PublicChatService(settings, supabase=supabase)
 
         # Retrieve context from vector store (respects Deep Memory if enabled)
         context, sources = await chat_service._retrieve_context(

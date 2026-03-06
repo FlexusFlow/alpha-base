@@ -10,12 +10,14 @@ from app.config import Settings
 from app.services.api_key_service import APIKeyService
 from app.services.job_manager import JobManager
 from app.services.rate_limiter import RateLimiter
+from app.services.web_search_limiter import WebSearchLimiter
 
 logger = logging.getLogger(__name__)
 
 _job_manager = JobManager()
 _supabase_client: Client | None = None
 _rate_limiter = RateLimiter(max_requests=60, window_seconds=60)
+_web_search_limiter: WebSearchLimiter | None = None
 _jwks_client: PyJWKClient | None = None
 
 
@@ -41,6 +43,17 @@ def get_supabase() -> Client:
 
 def get_rate_limiter() -> RateLimiter:
     return _rate_limiter
+
+
+def get_web_search_limiter() -> WebSearchLimiter:
+    global _web_search_limiter
+    if _web_search_limiter is None:
+        settings = get_settings()
+        _web_search_limiter = WebSearchLimiter(
+            max_requests=settings.web_search_rate_limit,
+            window_seconds=settings.web_search_rate_window,
+        )
+    return _web_search_limiter
 
 
 def _get_jwks_client(supabase_url: str) -> PyJWKClient:
