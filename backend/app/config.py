@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     deep_memory_max_pairs: int = 5000
     deep_memory_generation_delay: float = 1.0
     doc_link_filter_model: str = "gpt-4o-mini"
+    serper_api_key: Optional[str] = None
+    web_search_rate_limit: int = 50
+    web_search_rate_window: int = 86400
+    rag_confidence_threshold: float = 0.75
     log_level: str = "INFO"
 
     model_config = SettingsConfigDict(

@@ -24,8 +24,11 @@ https://github.com/FlexusFlow/alpha-base/commit/3bee5231bef2feb86b9d83e60d91ea8d
 - TypeScript (Next.js 15, React 19) + Next.js App Router, shadcn/ui, Supabase JS client, lucide-react
 - Supabase (PostgreSQL for metadata, Storage for files)
 - DeepLake Cloud (Managed Tensor DB) with Deep Memory for RAG accuracy (ZIP-004)
-- LangChain + langchain-deeplake for vector store operations
+- LangChain 0.3+ + langchain-deeplake for vector store operations
+- LangGraph (prebuilt agents) + ChatOpenAI for agentic RAG chat (ALP-012)
+- Serper (Google SERP API) for web search fallback — application-level config via `SERPER_API_KEY` env var, not per-user (ALP-012)
 - Playwright + markdownify for web scraping (articles & documentation sites)
+- sse-starlette for SSE streaming
 
 ## Known Limitations
 - None currently tracked.
@@ -38,6 +41,6 @@ https://github.com/FlexusFlow/alpha-base/commit/3bee5231bef2feb86b9d83e60d91ea8d
   ```
 
 ## Recent Changes
+- feature/ALP-012-agentic-search-fallback: Agentic RAG chat with "Extended search" toggle — KB-only mode (default) answers strictly from knowledge base; extended mode uses LangGraph ReAct agent (KB → Serper web search → general knowledge) with source labels. SERPER_API_KEY is application-level config, not per-user.
 - feature/ALP-011-cookie-failure-detection: Cookie failure detection — auto-marks cookies as "failed" on auth errors (403, Cloudflare, paywall), 6-layer soft-paywall detection, "Failed" badge in cookie management UI, auto-recovery on successful use
 - feature/ALP-010-fastapi-auth-middleware: JWT auth middleware — backend validates Supabase Bearer tokens server-side, replaced trust-the-client user_id fields
-- feature/ALP-009-antibot-scraper-fingerprint: Anti-bot browser fingerprint — realistic Chrome user-agent and post-load delay for Cloudflare-protected sites
