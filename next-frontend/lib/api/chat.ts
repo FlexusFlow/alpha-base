@@ -1,12 +1,12 @@
 import { getAuthHeaders } from '@/lib/api/auth-header'
-import { ChatRequest } from '@/lib/types/chat'
+import { ChatConfig, ChatRequest } from '@/lib/types/chat'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
 export async function sendChatMessage(
   request: ChatRequest,
   onToken: (token: string) => void,
-  onDone: (sources: string[]) => void,
+  onDone: (sources: string[], sourceTypes: string[]) => void,
   onError: (error: string) => void,
 ): Promise<void> {
   try {
@@ -56,7 +56,7 @@ export async function sendChatMessage(
           if (parsed.token) {
             onToken(parsed.token)
           } else if (parsed.done) {
-            onDone(parsed.sources || [])
+            onDone(parsed.sources || [], parsed.source_types || [])
           }
         } catch {
           // Skip unparseable lines
@@ -66,4 +66,15 @@ export async function sendChatMessage(
   } catch (err) {
     onError(err instanceof Error ? err.message : 'Unknown error')
   }
+}
+
+export async function getChatConfig(): Promise<ChatConfig> {
+  const authHeaders = await getAuthHeaders()
+  const response = await fetch(`${API_BASE_URL}/v1/api/chat/config`, {
+    headers: authHeaders,
+  })
+  if (!response.ok) {
+    return { web_search_available: false }
+  }
+  return response.json()
 }
