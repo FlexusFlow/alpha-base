@@ -10,16 +10,18 @@ Full-stack YouTube knowledge base app. Scrape YouTube channels, transcribe video
 | **Frontend** | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, shadcn/ui |
 | **Database** | Supabase (PostgreSQL + Auth + Storage) |
 | **Vector Store** | DeepLake Cloud with Deep Memory |
-| **AI Models** | GPT-4o (chat), Anthropic Claude Haiku/Sonnet (articles), text-embedding-3-small (embeddings) |
+| **AI Models** | GPT-4o (chat, agentic RAG), Anthropic Claude Haiku/Sonnet (articles), text-embedding-3-small (embeddings) |
+| **Agent Framework** | LangGraph (ReAct agents), LangChain 0.3+ |
+| **Web Search** | Serper (Google SERP API) — application-level config, not per-user |
 
 ## Features
 
 - **YouTube scraping** — bulk-scrape channels (up to 500 videos), auto-categorize videos
 - **Transcription** — youtube-transcript-api with yt-dlp fallback
-- **RAG chat** — streaming responses via SSE, persistent chat projects
+- **Agentic RAG chat** — LangGraph ReAct agent with "Extended search" toggle: KB-only mode (default) or full agent flow (KB → web search → general knowledge) with source labels
 - **Article scraping** — Playwright-based with AI summaries (Anthropic Claude)
 - **Documentation site scraping** — multi-page discovery, concurrent scraping, per-page tracking, retry failed pages
-- **Cookie management** — access paywalled/private content
+- **Cookie management** — access paywalled/private content, auto-detect auth failures and mark cookies as failed
 - **Deep Memory training** — LLM-generated training data for +22% retrieval accuracy
 - **Public RAG API** — API key authentication, rate limiting (60 req/min)
 - **Per-user knowledge base isolation** — dedicated DeepLake datasets per user
@@ -89,6 +91,10 @@ RAG_RETRIEVAL_K=5
 RAG_SCORE_THRESHOLD=0.3
 CHUNK_SIZE=1000
 CHUNK_OVERLAP=200
+SERPER_API_KEY=                                 # Serper.dev API key for web search (application-level, not per-user)
+WEB_SEARCH_RATE_LIMIT=50                       # max web searches per user per window
+WEB_SEARCH_RATE_WINDOW=86400                   # rate limit window in seconds (default: 24h)
+RAG_CONFIDENCE_THRESHOLD=0.75                  # fast path threshold (1.0 to disable)
 ```
 
 ### Frontend Setup
@@ -139,7 +145,8 @@ cd next-frontend && yarn lint
 | `POST` | `/v1/api/knowledge/add` | Add YouTube videos |
 | `GET` | `/v1/api/knowledge/jobs/{job_id}` | Job status |
 | `DELETE` | `/v1/api/knowledge/channels/{channel_id}` | Delete channel |
-| `POST` | `/v1/api/chat` | RAG chat (SSE streaming) |
+| `POST` | `/v1/api/chat` | Agentic RAG chat (SSE streaming) |
+| `GET` | `/v1/api/chat/config` | Chat config (web search availability) |
 | `POST` | `/v1/api/articles` | Scrape article |
 | `POST` | `/v1/api/articles/{id}/summarize` | AI article summary |
 | `POST` | `/v1/api/articles/{id}/chat` | Article Q&A |

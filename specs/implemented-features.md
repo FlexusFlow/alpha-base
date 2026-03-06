@@ -219,4 +219,18 @@
 - ALP-011 Failed cookie badge — Cookie management UI shows "Failed" badge (destructive variant, highest priority over Active/Expired/Unknown) with failure reason tooltip and relative timestamp (e.g., "2h ago — Paywall detected")
 - ALP-011 All scraping paths wired — YouTube transcription (`knowledge.py`), article scraping (`articles.py`), and documentation scraping (`doc_scraper.py`) catch `AuthenticationError`, mark cookies as failed, and clear failure on success
 
+## Stage 19: Agentic Search with Extended Search Toggle (ALP-012)
+
+- ALP-012 ReAct agent architecture — Replaced static RAG pipeline with LangGraph `create_react_agent` that autonomously decides tool usage order: KB search → web search → general knowledge. No user confirmation prompts.
+- ALP-012 KB-only mode (default) — "Extended search" toggle OFF: direct LLM call with KB context only, strict system prompt forbids general knowledge. If KB has no relevant results, responds "I don't have information about this in my knowledge base."
+- ALP-012 Extended search mode — "Extended search" toggle ON: full agentic flow. KB is always primary. Falls back to web search (Serper) then general knowledge. Non-KB responses prefixed with "From web search:" or "From general knowledge:" labels.
+- ALP-012 Confidence-based fast path — When extended search is ON, high-confidence KB hits (above `RAG_CONFIDENCE_THRESHOLD`) skip the agent loop entirely for lower latency, streaming direct LLM response with KB context.
+- ALP-012 Web search tool — Serper Google SERP integration via `langchain-community` `GoogleSerperAPIWrapper`, max 3 organic results per call. SERPER_API_KEY is an application-level configuration (set in backend `.env`), not per-user.
+- ALP-012 KB search tool — LangChain tool wrapping DeepLake similarity search with Deep Memory support, returns formatted chunks with titles, relevance scores, and source URLs.
+- ALP-012 Source attribution — SSE `done` event extended with `source_types` parallel array (`"kb"` or `"web"`) alongside `sources` URLs. KB responses carry no text label; web/general knowledge responses are labeled inline.
+- ALP-012 Per-user web search rate limiting — In-memory sliding window rate limiter (`WebSearchLimiter`), configurable via `WEB_SEARCH_RATE_LIMIT` and `WEB_SEARCH_RATE_WINDOW` env vars. Graceful degradation to KB + general knowledge when limit hit.
+- ALP-012 Chat config endpoint — `GET /v1/api/chat/config` returns `web_search_available` flag so frontend can show warning icon when Serper is not configured.
+- ALP-012 Extended search toggle UI — "Extended search" checkbox with Sparkles icon, unchecked by default (KB-only). Always clickable. When enabled without Serper key configured, shows AlertTriangle warning icon with tooltip "Web search is not configured and not available".
+- ALP-012 No new database tables — All state is in-memory (agent, rate limiter) or environment variables. No Supabase migrations required.
+
 ## Planned (Not Yet Implemented)
