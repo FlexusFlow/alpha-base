@@ -18,7 +18,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
+import { ExternalLink, ChevronUp, ChevronDown, FileText } from 'lucide-react';
 import { YTVideo } from '@/lib/types/youtube';
 
 
@@ -29,10 +29,11 @@ interface VideoTableProps {
   selectedIds: Set<string>;
   onSelectionChange: (ids: Set<string>) => void;
   onPaginationChange: (pagination: PaginationState) => void;
+  onViewTranscript?: (video: YTVideo) => void;
 }
 
 
-export function VideoTable({ videos, totalCount, selectedIds, onSelectionChange, onPaginationChange, loading}: VideoTableProps) {
+export function VideoTable({ videos, totalCount, selectedIds, onSelectionChange, onPaginationChange, loading, onViewTranscript}: VideoTableProps) {
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [sorting, setSorting] = useState<SortingState>([]);
   const isInitialMount = useRef(true);
@@ -153,6 +154,22 @@ export function VideoTable({ videos, totalCount, selectedIds, onSelectionChange,
           </a>
         </Button>
       ),
+      enableSorting: false,
+    },
+    {
+      id: 'transcript',
+      header: '',
+      cell: ({ row }) =>
+        row.original.is_transcribed && onViewTranscript ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onViewTranscript(row.original)}
+            title="View transcript"
+          >
+            <FileText className="h-4 w-4" />
+          </Button>
+        ) : null,
       enableSorting: false,
     },
   ];
