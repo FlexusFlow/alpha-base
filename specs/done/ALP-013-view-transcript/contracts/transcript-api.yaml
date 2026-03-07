@@ -1,0 +1,83 @@
+openapi: 3.0.3
+info:
+  title: Transcript View API
+  version: 1.0.0
+  description: Endpoint for retrieving video transcript content
+
+paths:
+  /v1/api/knowledge/videos/{video_id}/transcript:
+    get:
+      summary: Get transcript content for a transcribed video
+      description: |
+        Retrieves the transcript text for a video. Requires the video to be
+        owned by the authenticated user and marked as transcribed.
+        Returns the parsed transcript body (text after the --- separator).
+      operationId: getVideoTranscript
+      tags:
+        - knowledge
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: video_id
+          in: path
+          required: true
+          description: The YouTube video ID (not the UUID primary key)
+          schema:
+            type: string
+            example: "dQw4w9WgXcQ"
+      responses:
+        "200":
+          description: Transcript content retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscriptResponse"
+        "404":
+          description: Video not found, not transcribed, or transcript file missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid authentication token
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    TranscriptResponse:
+      type: object
+      required:
+        - video_id
+        - title
+        - url
+        - content
+      properties:
+        video_id:
+          type: string
+          description: YouTube video ID
+          example: "dQw4w9WgXcQ"
+        title:
+          type: string
+          description: Video title
+          example: "Introduction to Machine Learning"
+        url:
+          type: string
+          description: YouTube video URL
+          example: "https://youtube.com/watch?v=dQw4w9WgXcQ"
+        content:
+          type: string
+          description: Full transcript text (body only, without header)
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          example: "Transcript file not found. Try re-transcribing the video."
