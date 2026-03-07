@@ -69,3 +69,10 @@ class BulkDeleteResponse(BaseModel):
     succeeded: list[BulkDeleteItemSuccess]
     failed: list[BulkDeleteItemFailure]
     message: str
+
+
+class TranscriptResponse(BaseModel):
+    video_id: str
+    title: str
+    url: str
+    content: str

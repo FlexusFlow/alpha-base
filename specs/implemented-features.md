@@ -233,4 +233,15 @@
 - ALP-012 Extended search toggle UI — "Extended search" checkbox with Sparkles icon, unchecked by default (KB-only). Always clickable. When enabled without Serper key configured, shows AlertTriangle warning icon with tooltip "Web search is not configured and not available".
 - ALP-012 No new database tables — All state is in-memory (agent, rate limiter) or environment variables. No Supabase migrations required.
 
+## Stage 20: View Video Transcript (ALP-013)
+
+- ALP-013 Transcript retrieval endpoint — `GET /v1/api/knowledge/videos/{video_id}/transcript` reads transcript markdown file from disk, scoped to authenticated user via JWT. Reconstructs filename from video title using `sanitize_filename()`, parses body after `---` separator, returns `{video_id, title, url, content}`. Returns 404 if video not found, not transcribed, or file missing/empty.
+- ALP-013 Transcript response model — `TranscriptResponse` Pydantic model with `video_id`, `title`, `url`, `content` fields added to `backend/app/models/knowledge.py`
+- ALP-013 Frontend API helper — `getVideoTranscript(videoId)` async function in `next-frontend/lib/api/knowledge.ts` with `TranscriptResponse` TypeScript interface, calls backend with auth headers
+- ALP-013 Transcript side panel — `TranscriptPanel` component using shadcn/ui Sheet (`side="right"`, `sm:max-w-2xl`), displays video title, YouTube link, scrollable transcript text, loading spinner, and inline error state with re-transcription suggestion
+- ALP-013 Video table transcript button — New column in `VideoTable` with FileText icon button, visible only for `is_transcribed` rows, triggers `onViewTranscript` callback
+- ALP-013 Transcript switching — Clicking a different transcribed video while panel is open updates content without closing; cancels in-flight requests via effect cleanup
+- ALP-013 Copy all button — "Copy all" button in panel header using `navigator.clipboard.writeText()` with 2-second "Copied!" visual feedback (Check icon swap)
+- ALP-013 Per-user isolation — Backend endpoint scopes Supabase query with `.eq("user_id", user_id)` from JWT, ensuring users can only view their own transcripts
+
 ## Planned (Not Yet Implemented)

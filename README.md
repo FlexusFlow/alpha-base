@@ -17,7 +17,7 @@ Full-stack YouTube knowledge base app. Scrape YouTube channels, transcribe video
 ## Features
 
 - **YouTube scraping** — bulk-scrape channels (up to 500 videos), auto-categorize videos
-- **Transcription** — youtube-transcript-api with yt-dlp fallback
+- **Transcription** — youtube-transcript-api with yt-dlp fallback, view transcripts in side panel with copy-to-clipboard
 - **Agentic RAG chat** — LangGraph ReAct agent with "Extended search" toggle: KB-only mode (default) or full agent flow (KB → web search → general knowledge) with source labels
 - **Article scraping** — Playwright-based with AI summaries (Anthropic Claude)
 - **Documentation site scraping** — multi-page discovery, concurrent scraping, per-page tracking, retry failed pages
@@ -143,6 +143,7 @@ cd next-frontend && yarn lint
 |--------|----------|-------------|
 | `GET` | `/health` | Health check |
 | `POST` | `/v1/api/knowledge/add` | Add YouTube videos |
+| `GET` | `/v1/api/knowledge/videos/{video_id}/transcript` | View transcript |
 | `GET` | `/v1/api/knowledge/jobs/{job_id}` | Job status |
 | `DELETE` | `/v1/api/knowledge/channels/{channel_id}` | Delete channel |
 | `POST` | `/v1/api/chat` | Agentic RAG chat (SSE streaming) |

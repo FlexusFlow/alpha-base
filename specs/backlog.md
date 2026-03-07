@@ -4,9 +4,6 @@
 
 ## Existing Ideas
 
-- Add the ability to view the transcript of transcribed videos.
-- **Migrate `create_react_agent` → `create_agent`** — `langgraph.prebuilt.create_react_agent` is deprecated since LangGraph v1.0 (to be removed in v2.0). Replace with `langchain.agents.create_agent` (param: `prompt` → `system_prompt`) once `langchain>=1.0` is released as stable. Single call site in `backend/app/services/chat.py`.
-
 ## From: Customer Support Q&A Chatbot Article
 
 - **Temperature 0 for Factual Mode** — "Factual Mode" toggle in the chat UI that drops temperature to 0 for deterministic, fact-grounded, citation-backed answers vs. creative analysis.
@@ -39,3 +36,7 @@ https://learn.activeloop.ai/courses/take/langchain/multimedia/46318140-creating-
 ## From: Self-Critique Chain Article
 
 - **RAG Output Guard (Self-Critique)** — Add a Self-Critique Chain after RAG answer generation to validate responses against constitutional principles: (1) answer must be grounded only in retrieved context, no hallucinations; (2) auto-append "not financial advice" disclaimer when response contains specific stock recommendations; (3) verify transcript quotes are not distorted. Complements "Temperature 0 for Factual Mode" — both improve answer reliability for financial content. See technote: `.technotes/004-self-critique-chain-output-guard.md`
+
+
+## Depricated packages still works but needs to be removed after langchain release stable 1.0 version
+- **Migrate `create_react_agent` → `create_agent`** — `langgraph.prebuilt.create_react_agent` is deprecated since LangGraph v1.0 (to be removed in v2.0). Replace with `langchain.agents.create_agent` (param: `prompt` → `system_prompt`) once `langchain>=1.0` is released as stable. Single call site in `backend/app/services/chat.py`.

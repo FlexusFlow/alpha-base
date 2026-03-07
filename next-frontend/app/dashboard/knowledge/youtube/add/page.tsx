@@ -12,6 +12,7 @@ import { addToKnowledge } from '@/lib/api/knowledge';
 import { createClient } from '@/lib/supabase/client';
 import { ChannelInfo } from '@/components/youtube/channel-info';
 import { VideoTable } from '@/components/youtube/video-table';
+import { TranscriptPanel } from '@/components/youtube/transcript-panel';
 import { JobNotification } from '@/components/youtube/job-notification';
 import { YTChannelPreview } from '@/lib/types/youtube';
 import { JobStatusUpdate } from '@/lib/types/knowledge';
@@ -41,6 +42,8 @@ function AddYouTubeChannelContent() {
     pageIndex: 0,
     pageSize: 20,
     });
+  const [transcriptVideoId, setTranscriptVideoId] = useState<string | null>(null);
+  const [transcriptPanelOpen, setTranscriptPanelOpen] = useState(false);
   const autoTriggered = useRef(false);
 
   // Auto-trigger preview when navigating from a channel card with ?url= param
@@ -182,6 +185,11 @@ function AddYouTubeChannelContent() {
     setSelectedIds(ids);
   }, []);
 
+  const handleViewTranscript = useCallback((video: { video_id: string }) => {
+    setTranscriptVideoId(video.video_id);
+    setTranscriptPanelOpen(true);
+  }, []);
+
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-6">
       <div>
@@ -237,6 +245,7 @@ function AddYouTubeChannelContent() {
             selectedIds={selectedIds}
             onSelectionChange={handleSelectionChange}
             onPaginationChange={setPagination}
+            onViewTranscript={handleViewTranscript}
             loading={phase === 'loading' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           />
 
@@ -258,6 +267,13 @@ function AddYouTubeChannelContent() {
 
       {/* Job Notification */}
       <JobNotification jobId={jobId} onComplete={handleJobComplete} />
+
+      {/* Transcript Side Panel */}
+      <TranscriptPanel
+        videoId={transcriptVideoId}
+        open={transcriptPanelOpen}
+        onOpenChange={setTranscriptPanelOpen}
+      />
     </div>
   );
 }

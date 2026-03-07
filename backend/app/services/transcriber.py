@@ -7,6 +7,10 @@ import yt_dlp
 from yt_dlp.utils import DownloadError
 from youtube_transcript_api import YouTubeTranscriptApi
 
+from fastapi import HTTPException
+from supabase import Client
+
+from app.config import Settings
 from app.models.errors import AuthenticationError
 from app.services.auth_detection import is_auth_error
 from app.utils.text import parse_vtt, sanitize_filename
@@ -16,6 +20,62 @@ logger = logging.getLogger(__name__)
 
 class TranscriptionError(Exception):
     pass
+
+
+def get_transcript_content(
+    video_id: str, user_id: str, settings: Settings, supabase: Client
+) -> dict:
+    """Retrieve transcript file content for a video owned by the user.
+
+    Returns dict with video_id, title, url, and content (transcript body).
+    Raises HTTPException 404 if video not found, not transcribed, or file missing.
+    """
+    # Look up video record scoped to user
+    result = (
+        supabase.table("videos")
+        .select("video_id, title, url, is_transcribed")
+        .eq("video_id", video_id)
+        .eq("user_id", user_id)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    video = result.data[0]
+    if not video.get("is_transcribed"):
+        raise HTTPException(status_code=404, detail="Video has not been transcribed")
+
+    # Reconstruct filename from title
+    filename = sanitize_filename(video["title"]) + ".md"
+    file_path = Path(settings.transcripts_dir) / filename
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Transcript file not found. Try re-transcribing the video.",
+        )
+
+    raw_content = file_path.read_text(encoding="utf-8")
+    if not raw_content.strip():
+        raise HTTPException(
+            status_code=404,
+            detail="Transcript file is empty. Try re-transcribing the video.",
+        )
+
+    # Parse content: extract body after "---" separator
+    separator = "\n---\n"
+    if separator in raw_content:
+        content = raw_content.split(separator, 1)[1].strip()
+    else:
+        # Fallback: return entire content if no separator found
+        content = raw_content.strip()
+
+    return {
+        "video_id": video["video_id"],
+        "title": video["title"],
+        "url": video["url"],
+        "content": content,
+    }
 
 
 def get_transcript_via_api(video_id: str) -> str | None:

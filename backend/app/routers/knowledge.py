@@ -19,12 +19,13 @@ from app.models.knowledge import (
     JobStatusResponse,
     KnowledgeAddRequest,
     KnowledgeAddResponse,
+    TranscriptResponse,
 )
 from app.models.errors import AuthenticationError
 from app.services.chunk_count import update_cached_chunk_count
 from app.services.cookie_service import clear_cookie_failure, get_cookies_for_domain, mark_cookie_failed
 from app.services.job_manager import JobManager
-from app.services.transcriber import delete_transcripts, get_transcript, save_transcript_md
+from app.services.transcriber import delete_transcripts, get_transcript, get_transcript_content, save_transcript_md
 from app.services.vectorstore import get_user_vectorstore
 
 router = APIRouter(prefix="/v1/api/knowledge", tags=["knowledge"])
@@ -300,6 +301,16 @@ async def delete_channels_bulk(
     total = len(request.channel_ids)
     message = f"{len(succeeded)} of {total} channels deleted"
     return BulkDeleteResponse(succeeded=succeeded, failed=failed, message=message)
+
+
+@router.get("/videos/{video_id}/transcript", response_model=TranscriptResponse)
+async def get_video_transcript(
+    video_id: str,
+    user_id: str = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+    supabase: Client = Depends(get_supabase),
+):
+    return get_transcript_content(video_id, user_id, settings, supabase)
 
 
 @router.get("/jobs/{job_id}", response_model=JobStatusResponse)
