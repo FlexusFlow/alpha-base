@@ -94,7 +94,7 @@
 - AB-0066 Python FastAPI backend — Routers/services/models pattern, uv package manager
 - AB-0067 Next.js 15 frontend — App Router, shadcn/ui, Tailwind CSS v3, Supabase Auth
 - AB-0068 Supabase — Auth, PostgreSQL database, Row Level Security
-- AB-0069 DeepLake — Local vector store (with documented migration path to Activeloop Cloud)
+- AB-0069 DeepLake Cloud Migration — Migrated from local DeepLake to Activeloop Cloud for persistent, shared vector stores and better scalability. Deep Lake 3.71+ includes HNSW index for sub-second ANN search at scale (35M+ embeddings) and is ~80% cheaper than Pinecone/Qdrant/Weaviate. See technote: `.technotes/001-deeplake-hnsw-index.md`
 - AB-0070 Deployment options documented — Vercel + Railway + Activeloop Cloud, serverless, or single VPS
 - AB-0071 Speckit project configuration — Added speckit templates and commands for feature specification workflows (commit 9e4be3e)
 
