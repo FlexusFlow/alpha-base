@@ -119,6 +119,34 @@ class VectorStoreService:
             return self.add_documents(texts, metadatas)
         return 0
 
+    def add_article(
+        self,
+        article_id: str,
+        content_markdown: str,
+        title: str,
+        url: str,
+    ) -> int:
+        """Index a single article's content into DeepLake with article-specific metadata.
+
+        Args:
+            article_id: Supabase article UUID
+            content_markdown: Full article content in markdown
+            title: Article title
+            url: Article source URL
+
+        Returns the number of chunks added. Returns 0 if content is empty.
+        """
+        if not content_markdown:
+            return 0
+
+        metadata = {
+            "article_id": article_id,
+            "title": title or "",
+            "source_type": "article",
+            "source": url,
+        }
+        return self.add_documents([content_markdown], [metadata])
+
     def delete_by_collection_id(self, collection_id: str) -> int:
         """Delete all vector chunks matching a documentation collection_id."""
         if not collection_id:
@@ -127,6 +155,24 @@ class VectorStoreService:
         db = DeeplakeVectorStore(**self._get_db_kwargs(overwrite=False))
 
         query = f"SELECT ids FROM (SELECT * WHERE metadata['collection_id'] == '{collection_id}')"
+        results = db.dataset.query(query)
+
+        matching_ids = results["ids"][:]
+        if len(matching_ids) == 0:
+            return 0
+
+        db.delete(ids=list(matching_ids))
+        return len(matching_ids)
+
+    def delete_by_article_ids(self, article_ids: list[str]) -> int:
+        """Delete all vector chunks matching the given article_ids from DeepLake."""
+        if not article_ids:
+            return 0
+
+        db = DeeplakeVectorStore(**self._get_db_kwargs(overwrite=False))
+
+        ids_str = ", ".join(f"'{aid}'" for aid in article_ids)
+        query = f"SELECT ids FROM (SELECT * WHERE metadata['article_id'] IN ({ids_str}))"
         results = db.dataset.query(query)
 
         matching_ids = results["ids"][:]

@@ -41,6 +41,5 @@ https://github.com/FlexusFlow/alpha-base/commit/3bee5231bef2feb86b9d83e60d91ea8d
   ```
 
 ## Recent Changes
+- feature/ALP-014-index-articles-vectorstore: Index scraped articles in vector store for RAG chat, add backend DELETE endpoint with vectorstore cleanup, reject duplicate URLs.
 - research/ALP-001-mcp-tools-research: MCP tools & servers research — evaluated 30+ public MCP servers, recommended 4 dev-time additions (YouTube Transcript, Tavily, Firecrawl, GitHub), identified future AlphaBase Knowledge Base MCP server opportunity. Technote 015.
-- feature/ALP-013-view-transcript: View video transcript — slide-over side panel displaying transcript text for transcribed videos, with "Copy all" clipboard button. Backend endpoint reads markdown files from disk scoped to authenticated user.
-- feature/ALP-012-agentic-search-fallback: Agentic RAG chat with "Extended search" toggle — KB-only mode (default) answers strictly from knowledge base; extended mode uses LangGraph ReAct agent (KB → Serper web search → general knowledge) with source labels. SERPER_API_KEY is application-level config, not per-user.

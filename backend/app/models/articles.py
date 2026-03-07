@@ -17,6 +17,11 @@ class ArticleScrapeResponse(BaseModel):
     message: str
 
 
+class ArticleDeleteResponse(BaseModel):
+    message: str
+    vectors_deleted: bool
+
+
 @dataclass
 class ArticleJob:
     """Lightweight job for article scraping SSE dispatch.
