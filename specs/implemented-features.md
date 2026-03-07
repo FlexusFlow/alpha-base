@@ -244,4 +244,12 @@
 - ALP-013 Copy all button — "Copy all" button in panel header using `navigator.clipboard.writeText()` with 2-second "Copied!" visual feedback (Check icon swap)
 - ALP-013 Per-user isolation — Backend endpoint scopes Supabase query with `.eq("user_id", user_id)` from JWT, ensuring users can only view their own transcripts
 
+## Stage 21: Index Articles in Vector Store (ALP-014)
+
+- ALP-014 Article vectorstore indexing — After successful scraping, article content is chunked (RecursiveCharacterTextSplitter, 1000 chars / 200 overlap) and indexed in the user's per-user DeepLake dataset with metadata `{article_id, title, source_type: "article", source: url}`. Empty content skips indexing. Indexing failures are logged but don't break the scrape flow.
+- ALP-014 Duplicate URL prevention — `scrape_article_endpoint()` checks for existing article with same URL + user_id before insert, returns HTTP 409 if duplicate found.
+- ALP-014 Backend article deletion endpoint — `DELETE /v1/api/articles/{article_id}` atomically removes vector store chunks (via `delete_by_article_ids()`) and Supabase record. Follows documentation deletion pattern: verify ownership → delete vectors → update chunk count cache → delete DB record. Vector store failures logged as warnings, DB deletion proceeds.
+- ALP-014 Frontend DELETE proxy — Next.js API route `DELETE /api/articles/[id]` now proxies to backend instead of deleting directly from Supabase, ensuring vector store cleanup happens on every delete.
+- ALP-014 VectorStoreService methods — `add_article(article_id, content_markdown, title, url)` for indexing, `delete_by_article_ids(article_ids)` for deletion via TQL metadata query on `article_id` field.
+
 ## Planned (Not Yet Implemented)
