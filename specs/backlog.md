@@ -7,8 +7,12 @@
 ## From: Customer Support Q&A Chatbot Article
 
 - **Temperature 0 for Factual Mode** — "Factual Mode" toggle in the chat UI that drops temperature to 0 for deterministic, fact-grounded, citation-backed answers vs. creative analysis.
-- **Multi-Source Context Attribution** — RAG responses should return structured `{"answer": "...", "sources": [...]}` format with clickable links to originals. Every chunk must carry `source` metadata (video URL+timestamp for transcripts, article URL for web content, source_type for filtering). UI renders sources as clickable references under each answer. Pattern validated by RetrievalQAWithSourcesChain approach. See technote: `.technotes/010-qa-chatbot-with-sources.md`
-- **Cloud DeepLake Migration** — Migrate from local DeepLake to Activeloop Cloud (migration path documented in AB-0069). Enables persistent, shared vector stores and better scalability. Deep Lake 3.71+ includes HNSW index for sub-second ANN search at scale (35M+ embeddings) and is ~80% cheaper than Pinecone/Qdrant/Weaviate. See technote: `.technotes/001-deeplake-hnsw-index.md`
+- **Multi-Source Context Attribution (remaining gaps)** — Partially done: SSE `done` events already return `sources[]` + `source_types[]`, frontend renders clickable URL links, public API returns `{"answer", "sources"}`. Remaining work:
+  1. **Index articles in vectorstore** — Articles are scraped to Supabase DB only and invisible to RAG. Add `vectorstore.add_documents()` call during article ingestion with metadata `{source_type: "article", source: url, title: title}`.
+  2. **Add `source_type` to YouTube chunk metadata** — Documentation chunks have `source_type: "documentation"` but YouTube chunks have no `source_type` field. Add `source_type: "youtube"` during transcript vectorization (`knowledge.py`).
+  3. **Return structured sources from backend** — Replace flat `sources: string[]` with `sources: [{url, title, source_type}]` in SSE `done` events and public API response. Backend already has `title`/`page_title` in chunk metadata but discards it before sending to frontend.
+  4. **Rich source display in chat UI** — Frontend currently shows raw URLs only and ignores `source_types`. Render sources with titles, source type icons/badges (YouTube/Article/Docs/Web), and grouped by type.
+  See technote: `.technotes/010-qa-chatbot-with-sources.md`
 - **Custom Chunking Strategies per Source Type** — Articles have headings/paragraphs; transcripts are continuous speech. Use source-aware splitting (e.g., HTMLHeaderTextSplitter for articles, RecursiveCharacterTextSplitter for transcripts).
 
 ## From: Conversation Intelligence / SalesCopilot Article
@@ -37,6 +41,14 @@ https://learn.activeloop.ai/courses/take/langchain/multimedia/46318140-creating-
 
 - **RAG Output Guard (Self-Critique)** — Add a Self-Critique Chain after RAG answer generation to validate responses against constitutional principles: (1) answer must be grounded only in retrieved context, no hallucinations; (2) auto-append "not financial advice" disclaimer when response contains specific stock recommendations; (3) verify transcript quotes are not distorted. Complements "Temperature 0 for Factual Mode" — both improve answer reliability for financial content. See technote: `.technotes/004-self-critique-chain-output-guard.md`
 
+
+## From: MCP Tools & Servers Research (ALP-001)
+
+- **Evaluate Tavily vs Serper for Extended Search** — Tavily is a RAG-optimized search API that returns pre-extracted, structured content (vs Serper's raw SERP data). Run a side-by-side comparison on 20 representative queries from AlphaBase's chat to measure relevance and answer quality. If Tavily wins, consider replacing Serper in the agentic RAG chat (ALP-012). Free tier available. See technote: `.technotes/015-mcp-tools-research.md`
+- **Add YouTube Transcript MCP to Dev Tooling** — Add `kimtaeyoon83/mcp-server-youtube-transcript` to Claude Code MCP config for faster transcript testing during development. Skips Whisper for videos with existing YouTube captions. See technote: `.technotes/015-mcp-tools-research.md`
+- **Add Firecrawl MCP to Dev Tooling** — Add Firecrawl MCP server to Claude Code config for testing web scraping on JS-heavy sites. Supplements existing Playwright+markdownify pipeline. See technote: `.technotes/015-mcp-tools-research.md`
+- **Add GitHub MCP to Dev Tooling** — Add official GitHub MCP server to Claude Code config for PR/issue automation. See technote: `.technotes/015-mcp-tools-research.md`
+- **AlphaBase Knowledge Base MCP Server** (future) — Use FastMCP to auto-generate an MCP server from AlphaBase's FastAPI OpenAPI spec, enabling external AI tools to query user knowledge bases. Requires auth + per-user isolation. See technote: `.technotes/015-mcp-tools-research.md`
 
 ## Depricated packages still works but needs to be removed after langchain release stable 1.0 version
 - **Migrate `create_react_agent` → `create_agent`** — `langgraph.prebuilt.create_react_agent` is deprecated since LangGraph v1.0 (to be removed in v2.0). Replace with `langchain.agents.create_agent` (param: `prompt` → `system_prompt`) once `langchain>=1.0` is released as stable. Single call site in `backend/app/services/chat.py`.
