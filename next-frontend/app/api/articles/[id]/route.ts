@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getServerAuthHeaders } from '@/lib/supabase/auth-token';
+
+const NEXT_PUBLIC_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function DELETE(
   request: NextRequest,
@@ -13,15 +16,17 @@ export async function DELETE(
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  const { error } = await supabase
-    .from('articles')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', user.id);
+  try {
+    const authHeaders = await getServerAuthHeaders();
+    const backendResponse = await fetch(
+      `${NEXT_PUBLIC_API_BASE_URL}/v1/api/articles/${id}`,
+      { method: 'DELETE', headers: { ...authHeaders } },
+    );
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const data = await backendResponse.json();
+    return NextResponse.json(data, { status: backendResponse.status });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json({ message: 'Article deleted' });
 }
