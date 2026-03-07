@@ -8,7 +8,7 @@
 
 - **Temperature 0 for Factual Mode** — "Factual Mode" toggle in the chat UI that drops temperature to 0 for deterministic, fact-grounded, citation-backed answers vs. creative analysis.
 - **Multi-Source Context Attribution (remaining gaps)** — Partially done: SSE `done` events already return `sources[]` + `source_types[]`, frontend renders clickable URL links, public API returns `{"answer", "sources"}`. Remaining work:
-  1. ~~**Index articles in vectorstore**~~ — ✅ Done (ALP-014). Articles are now chunked and indexed in the user's per-user DeepLake dataset during scraping.
+
   2. **Add `source_type` to YouTube chunk metadata** — Documentation chunks have `source_type: "documentation"` but YouTube chunks have no `source_type` field. Add `source_type: "youtube"` during transcript vectorization (`knowledge.py`).
   3. **Return structured sources from backend** — Replace flat `sources: string[]` with `sources: [{url, title, source_type}]` in SSE `done` events and public API response. Backend already has `title`/`page_title` in chunk metadata but discards it before sending to frontend.
   4. **Rich source display in chat UI** — Frontend currently shows raw URLs only and ignores `source_types`. Render sources with titles, source type icons/badges (YouTube/Article/Docs/Web), and grouped by type.

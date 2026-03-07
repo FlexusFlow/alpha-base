@@ -67,6 +67,7 @@ async def process_knowledge_job(
                 "title": video.title,
                 "channel": channel_title,
                 "source": f"https://youtube.com/watch?v={video.video_id}",
+                "source_type": "youtube",
             })
             # Mark video as transcribed in Supabase
             try:
