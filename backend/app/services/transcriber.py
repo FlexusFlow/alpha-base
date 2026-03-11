@@ -84,7 +84,8 @@ def get_transcript_via_api(video_id: str) -> str | None:
         api = YouTubeTranscriptApi()
         transcript = api.fetch(video_id, languages=["en"])
         return " ".join(snippet.text for snippet in transcript.snippets)
-    except Exception:
+    except Exception as e:
+        logger.warning("youtube-transcript-api failed for %s: %s", video_id, e)
         return None
 
 
