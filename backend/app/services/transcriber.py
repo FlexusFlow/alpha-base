@@ -6,6 +6,7 @@ from pathlib import Path
 import yt_dlp
 from yt_dlp.utils import DownloadError
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.proxies import WebshareProxyConfig
 
 from fastapi import HTTPException
 from supabase import Client
@@ -78,10 +79,18 @@ def get_transcript_content(
     }
 
 
-def get_transcript_via_api(video_id: str) -> str | None:
+def get_transcript_via_api(video_id: str, settings: Settings) -> str | None:
     """Attempt to get transcript via youtube-transcript-api (fast, free)."""
     try:
-        api = YouTubeTranscriptApi()
+        if settings.proxy_user and settings.proxy_pass:
+            api = YouTubeTranscriptApi(
+                proxy_config=WebshareProxyConfig(
+                    proxy_username=settings.proxy_user,
+                    proxy_password=settings.proxy_pass,
+                )
+            )
+        else:
+            api = YouTubeTranscriptApi()
         transcript = api.fetch(video_id, languages=["en"])
         return " ".join(snippet.text for snippet in transcript.snippets)
     except Exception as e:
@@ -173,10 +182,13 @@ def get_transcript_via_ytdlp(video_id: str, cookie: str | None = None) -> str | 
             Path(cookie_file_path).unlink(missing_ok=True)
 
 
-def get_transcript(video_id: str, title: str, cookie: str | None = None) -> str:
+def get_transcript(video_id: str, title: str, cookie: str | None = None, settings: Settings | None = None) -> str:
     """Get transcript, trying youtube-transcript-api first, then yt-dlp."""
+    if settings is None:
+        from app.config import settings as default_settings
+        settings = default_settings
 
-    text = get_transcript_via_api(video_id)
+    text = get_transcript_via_api(video_id, settings)
     if text:
         return text
 

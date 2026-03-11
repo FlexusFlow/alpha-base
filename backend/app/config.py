@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     rag_confidence_threshold: float = 0.75
     kb_relevance_threshold: float = 0.5
     query_reformulation_model: str = "gpt-4o-mini"
+    proxy_user: Optional[str] = None
+    proxy_pass: Optional[str] = None
     log_level: str = "INFO"
 
     model_config = SettingsConfigDict(
