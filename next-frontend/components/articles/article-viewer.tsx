@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import type { Components } from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -32,6 +33,27 @@ export function ArticleViewer({ article }: ArticleViewerProps) {
   const [showChat, setShowChat] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  const articleComponents = useMemo<Components>(() => {
+    const baseUrl = article.url;
+    return {
+      a({ children, href, ...props }) {
+        let resolvedHref = href;
+        if (href && !href.startsWith('http') && !href.startsWith('mailto:')) {
+          try {
+            resolvedHref = new URL(href, baseUrl).href;
+          } catch {
+            // keep original href if URL parsing fails
+          }
+        }
+        return (
+          <a href={resolvedHref} target="_blank" rel="noopener noreferrer" {...props}>
+            {children}
+          </a>
+        );
+      },
+    };
+  }, [article.url]);
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -114,7 +136,7 @@ export function ArticleViewer({ article }: ArticleViewerProps) {
 
       {/* Article content */}
       <div className="prose prose-sm dark:prose-invert max-w-none">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={articleComponents}>
           {article.content_markdown || ''}
         </ReactMarkdown>
       </div>
