@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     web_search_rate_limit: int = 50
     web_search_rate_window: int = 86400
     rag_confidence_threshold: float = 0.75
+    kb_relevance_threshold: float = 0.5
     log_level: str = "INFO"
 
     model_config = SettingsConfigDict(

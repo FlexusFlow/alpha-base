@@ -57,6 +57,18 @@ export function ChatMessageBubble({ message }: Props) {
                 </li>
               ))}
             </ul>
+            {message.kbRelevant === false && !message.extendedSearch && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                For more relevant information, try using Extended search
+              </p>
+            )}
+          </div>
+        )}
+        {(!message.sources || message.sources.length === 0) && message.kbRelevant === false && !message.extendedSearch && (
+          <div className="mt-2 border-t border-border/40 pt-2">
+            <p className="text-xs text-muted-foreground">
+              For more relevant information, try using Extended search
+            </p>
           </div>
         )}
       </div>

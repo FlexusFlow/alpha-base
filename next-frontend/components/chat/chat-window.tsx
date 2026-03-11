@@ -111,11 +111,17 @@ export function ChatWindow({ projectId, initialMessages }: Props) {
           return updated
         })
       },
-      (sources, sourceTypes) => {
+      (sources, sourceTypes, kbRelevant) => {
         setMessages((prev) => {
           const updated = [...prev]
           const last = updated[updated.length - 1]
-          updated[updated.length - 1] = { ...last, sources, sourceTypes }
+          updated[updated.length - 1] = {
+            ...last,
+            sources,
+            sourceTypes,
+            kbRelevant,
+            extendedSearch,
+          }
           return updated
         })
         setStreaming(false)
