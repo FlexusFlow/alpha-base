@@ -174,10 +174,9 @@ def get_transcript_via_ytdlp(video_id: str, cookie: str | None = None) -> str | 
 def get_transcript(video_id: str, title: str, cookie: str | None = None) -> str:
     """Get transcript, trying youtube-transcript-api first, then yt-dlp."""
 
-    # print(video_id, title)
-    # text = get_transcript_via_api(video_id)
-    # if text:
-    #     return text
+    text = get_transcript_via_api(video_id)
+    if text:
+        return text
 
     text = get_transcript_via_ytdlp(video_id, cookie=cookie)
     if text:
