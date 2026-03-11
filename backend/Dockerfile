@@ -11,6 +11,9 @@ WORKDIR /app
 COPY pyproject.toml uv.lock* ./
 RUN uv sync --no-dev --frozen 2>/dev/null || uv sync --no-dev
 
+# Install Playwright Chromium and its system dependencies
+RUN uv run playwright install --with-deps chromium
+
 COPY . .
 
 RUN useradd -m appuser && chown -R appuser:appuser /app
