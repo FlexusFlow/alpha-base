@@ -252,4 +252,23 @@
 - ALP-014 Frontend DELETE proxy — Next.js API route `DELETE /api/articles/[id]` now proxies to backend instead of deleting directly from Supabase, ensuring vector store cleanup happens on every delete.
 - ALP-014 VectorStoreService methods — `add_article(article_id, content_markdown, title, url)` for indexing, `delete_by_article_ids(article_ids)` for deletion via TQL metadata query on `article_id` field.
 
+## Stage 22: YouTube Source Type Metadata (ALP-015)
+
+- ALP-015 YouTube chunk source_type — Added `source_type: "youtube"` to metadata dictionary during transcript vectorization in `knowledge.py`, matching existing `source_type: "documentation"` and `source_type: "article"` conventions for consistent source attribution across all content types
+- ALP-015 No migration required — Change applies only to newly vectorized chunks; existing chunks without `source_type` continue to work normally in search, chat, and deletion operations
+
+## Stage 23: Chat & Summary Markdown Rendering (ALP-016)
+
+- ALP-016 Markdown rendering for AI chat responses — Assistant messages in RAG chat (`ChatMessageBubble`) and article Q&A chat (`ArticleChat`) render markdown (headings, bold, italic, lists, code blocks, inline code, links, blockquotes) via react-markdown + remark-gfm, replacing plain text display
+- ALP-016 Syntax highlighting — Fenced code blocks with language tags get language-specific syntax highlighting via rehype-highlight (highlight.js, github-dark theme)
+- ALP-016 Code block copy button — `CodeBlock` component wraps `<pre>` with a hover-visible copy-to-clipboard button and 2-second "Copied" checkmark feedback
+- ALP-016 HTML sanitization — rehype-sanitize with custom schema whitelists highlight.js `className` attributes while stripping dangerous HTML (XSS prevention)
+- ALP-016 User messages remain plain text — Conditional rendering: only `role === "assistant"` messages go through ReactMarkdown; user messages keep `whitespace-pre-wrap` literal display
+- ALP-016 Shared markdown config — `markdown-config.tsx` centralizes remark/rehype plugins, sanitize schema, and component overrides (pre, a, code) used by all three consumers
+- ALP-016 Article AI summary markdown — `ArticleSummary` component renders summary content as formatted markdown instead of plain `<p>` text
+- ALP-016 Collapsible AI summary — Clickable card header with chevron toggle to expand/collapse the AI summary section, starts expanded
+- ALP-016 Article relative link resolution — Relative hrefs in scraped article content resolve against the article's source domain (via `new URL(href, article.url)`) instead of the app's origin
+- ALP-016 Tailwind Typography plugin — Added `@tailwindcss/typography` to enable `prose` class styling for markdown-rendered content
+- ALP-016 New dependencies — `rehype-highlight`, `rehype-sanitize`, `@tailwindcss/typography` (dev)
+
 ## Planned (Not Yet Implemented)
