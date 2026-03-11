@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     web_search_rate_window: int = 86400
     rag_confidence_threshold: float = 0.75
     kb_relevance_threshold: float = 0.5
+    query_reformulation_model: str = "gpt-4o-mini"
     log_level: str = "INFO"
 
     model_config = SettingsConfigDict(

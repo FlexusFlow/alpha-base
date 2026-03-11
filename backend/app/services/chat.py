@@ -19,6 +19,7 @@ from supabase import Client
 from app.config import Settings
 from app.models.chat import ChatMessage
 from app.services.agent_tools import make_kb_search_tool, make_web_search_tool
+from app.services.query_reformulation import reformulate_query
 from app.services.vectorstore import get_user_vectorstore
 from app.services.web_search_limiter import WebSearchLimiter
 
@@ -166,9 +167,10 @@ class AgentChatService:
         self, message: str, history: list[ChatMessage], user_id: str, deep_memory: bool
     ) -> AsyncGenerator[dict, None]:
         """KB-only mode: search KB, pass as context, LLM answers strictly from context."""
+        search_query = await reformulate_query(message, self.settings)
         vectorstore = get_user_vectorstore(user_id, self.settings)
         results = await vectorstore.similarity_search(
-            query=message,
+            query=search_query,
             k=self.settings.rag_retrieval_k,
             score_threshold=self.settings.rag_score_threshold,
             deep_memory=deep_memory,
@@ -256,7 +258,7 @@ class AgentChatService:
 
         # Build agent tools
         vectorstore = get_user_vectorstore(user_id, self.settings)
-        tools = [make_kb_search_tool(vectorstore, deep_memory=deep_memory)]
+        tools = [make_kb_search_tool(vectorstore, deep_memory=deep_memory, settings=self.settings)]
 
         web_search_available = self.settings.serper_api_key is not None
         if web_search_available and self.web_search_limiter:
