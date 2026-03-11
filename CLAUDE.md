@@ -41,6 +41,6 @@ https://github.com/FlexusFlow/alpha-base/commit/3bee5231bef2feb86b9d83e60d91ea8d
   ```
 
 ## Recent Changes
+- feature/ALP-016-chat-markdown-rendering: Render AI chat/summary content as formatted markdown with syntax highlighting, copy-to-clipboard on code blocks, collapsible AI summary, and relative link resolution for scraped articles.
 - feature/ALP-015-youtube-source-type: Add `source_type: "youtube"` to YouTube chunk metadata for consistent source attribution across all content types.
 - feature/ALP-014-index-articles-vectorstore: Index scraped articles in vector store for RAG chat, add backend DELETE endpoint with vectorstore cleanup, reject duplicate URLs.
-- research/ALP-001-mcp-tools-research: MCP tools & servers research — evaluated 30+ public MCP servers, recommended 4 dev-time additions (YouTube Transcript, Tavily, Firecrawl, GitHub), identified future AlphaBase Knowledge Base MCP server opportunity. Technote 015.

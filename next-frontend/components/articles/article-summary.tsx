@@ -1,10 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Sparkles } from 'lucide-react';
+import { ChevronDown, Loader2, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import {
+  markdownRemarkPlugins,
+  markdownRehypePlugins,
+  markdownComponents,
+} from '@/components/chat/markdown-config';
 
 interface ArticleSummaryProps {
   articleId: string;
@@ -14,6 +21,7 @@ interface ArticleSummaryProps {
 export function ArticleSummary({ articleId, initialSummary }: ArticleSummaryProps) {
   const [summary, setSummary] = useState<string | null>(initialSummary);
   const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const { toast } = useToast();
 
   const handleSummarize = async () => {
@@ -68,15 +76,34 @@ export function ArticleSummary({ articleId, initialSummary }: ArticleSummaryProp
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader
+        className="py-4 cursor-pointer select-none"
+        onClick={() => setExpanded((prev) => !prev)}
+      >
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <Sparkles className="h-4 w-4" />
           AI Summary
+          <ChevronDown
+            className={cn(
+              'ml-auto h-4 w-4 text-muted-foreground transition-transform',
+              !expanded && '-rotate-90',
+            )}
+          />
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <p className="text-sm leading-relaxed">{summary}</p>
-      </CardContent>
+      {expanded && (
+        <CardContent className="pt-2">
+          <div className="prose prose-sm dark:prose-invert max-w-none prose-pre:bg-transparent prose-pre:p-0">
+            <ReactMarkdown
+              remarkPlugins={markdownRemarkPlugins}
+              rehypePlugins={markdownRehypePlugins}
+              components={markdownComponents}
+            >
+              {summary}
+            </ReactMarkdown>
+          </div>
+        </CardContent>
+      )}
     </Card>
   );
 }
