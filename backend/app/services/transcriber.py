@@ -81,8 +81,9 @@ def get_transcript_content(
 def get_transcript_via_api(video_id: str) -> str | None:
     """Attempt to get transcript via youtube-transcript-api (fast, free)."""
     try:
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=["en"])
-        return " ".join(entry["text"] for entry in transcript_list)
+        api = YouTubeTranscriptApi()
+        transcript = api.fetch(video_id, languages=["en"])
+        return " ".join(snippet.text for snippet in transcript.snippets)
     except Exception:
         return None
 
