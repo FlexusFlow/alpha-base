@@ -12,6 +12,8 @@ COPY pyproject.toml uv.lock* ./
 RUN uv sync --no-dev --frozen 2>/dev/null || uv sync --no-dev
 
 # Install Playwright Chromium and its system dependencies
+# Set shared browser path so both root (build) and appuser (runtime) use the same location
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
 RUN uv run playwright install --with-deps chromium
 
 COPY . .
