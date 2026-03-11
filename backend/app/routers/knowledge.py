@@ -56,6 +56,7 @@ async def process_knowledge_job(
             text = await asyncio.to_thread(
                 get_transcript, video.video_id, video.title,
                 cookie_result.cookies_json if cookie_result else None,
+                settings,
             )
             save_transcript_md(
                 video.video_id, video.title, text,
