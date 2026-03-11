@@ -3,20 +3,29 @@ import logging
 from langchain_core.tools import tool
 from langchain_community.utilities import GoogleSerperAPIWrapper
 
+from app.config import Settings
+from app.services.query_reformulation import reformulate_query
 from app.services.vectorstore import VectorStoreService
 
 logger = logging.getLogger(__name__)
 
 
-def make_kb_search_tool(vectorstore: VectorStoreService, deep_memory: bool = False):
+def make_kb_search_tool(
+    vectorstore: VectorStoreService,
+    deep_memory: bool = False,
+    settings: Settings | None = None,
+):
     """Create a knowledge base search tool bound to a user's vectorstore."""
 
     @tool
     async def search_knowledge_base(query: str) -> str:
         """Search the user's personal knowledge base of YouTube transcripts, articles,
         and documentation. Always use this tool first before web search."""
+        search_query = query
+        if settings:
+            search_query = await reformulate_query(query, settings)
         results = await vectorstore.similarity_search(
-            query=query, k=5, score_threshold=0.3, deep_memory=deep_memory,
+            query=search_query, k=5, score_threshold=0.3, deep_memory=deep_memory,
         )
         if not results:
             return "No relevant content found in the knowledge base."
