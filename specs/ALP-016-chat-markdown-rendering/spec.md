@@ -73,7 +73,7 @@ User-authored messages continue to display as plain text without markdown interp
 
 ### Functional Requirements
 
-- **FR-001**: System MUST render AI assistant messages as formatted markdown, supporting: headings, bold, italic, ordered/unordered lists, code blocks (fenced), inline code, links, and blockquotes.
+- **FR-001**: System MUST render AI assistant messages as formatted markdown in all chat interfaces (RAG chat and article chat), supporting: headings, bold, italic, ordered/unordered lists, code blocks (fenced), inline code, links, and blockquotes.
 - **FR-002**: System MUST display user messages as plain text without markdown interpretation, preserving current behavior.
 - **FR-003**: System MUST sanitize any raw HTML in markdown content to prevent cross-site scripting (XSS) attacks.
 - **FR-004**: System MUST render fenced code blocks with monospace font, visual distinction from surrounding text, and language-specific syntax highlighting when a language tag is provided.
@@ -95,5 +95,5 @@ User-authored messages continue to display as plain text without markdown interp
 ## Assumptions
 
 - The AI backend already returns markdown-formatted content in `message.content`. No backend changes are needed.
-- Only the `ChatMessageBubble` component needs modification. The chat data flow and message types remain unchanged.
+- Both `ChatMessageBubble` (RAG chat) and `ArticleChat` (article Q&A) components need markdown rendering for assistant messages. The chat data flow and message types remain unchanged.
 - Standard markdown elements are sufficient — no need for extended syntax like footnotes, definition lists, or math equations.
