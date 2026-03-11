@@ -3,6 +3,8 @@ export interface ChatMessage {
   content: string
   sources?: string[]
   sourceTypes?: string[]
+  kbRelevant?: boolean
+  extendedSearch?: boolean
 }
 
 export interface ChatRequest {

@@ -6,7 +6,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 export async function sendChatMessage(
   request: ChatRequest,
   onToken: (token: string) => void,
-  onDone: (sources: string[], sourceTypes: string[]) => void,
+  onDone: (sources: string[], sourceTypes: string[], kbRelevant?: boolean) => void,
   onError: (error: string) => void,
 ): Promise<void> {
   try {
@@ -56,7 +56,7 @@ export async function sendChatMessage(
           if (parsed.token) {
             onToken(parsed.token)
           } else if (parsed.done) {
-            onDone(parsed.sources || [], parsed.source_types || [])
+            onDone(parsed.sources || [], parsed.source_types || [], parsed.kb_relevant ?? undefined)
           }
         } catch {
           // Skip unparseable lines

@@ -62,11 +62,15 @@ async def chat(
                 sources = chunk.get("sources", [])
                 source_types = chunk.get("source_types", [])
                 full_response = chunk.get("full_response", full_response)
-                yield {"data": json.dumps({
+                done_event = {
                     "done": True,
                     "sources": sources,
                     "source_types": source_types,
-                })}
+                }
+                # Include kb_relevant only for KB-only mode
+                if not request.extended_search:
+                    done_event["kb_relevant"] = chunk.get("kb_relevant")
+                yield {"data": json.dumps(done_event)}
 
         # Store messages in Supabase
         try:

@@ -24,9 +24,19 @@ from app.services.web_search_limiter import WebSearchLimiter
 
 logger = logging.getLogger(__name__)
 
-KB_ONLY_SYSTEM_PROMPT = """You are a helpful assistant. Answer ONLY using the provided knowledge base context. \
-If the context does not contain relevant information, respond: \
-'I don't have information about this in my knowledge base.' \
+KB_ONLY_RELEVANT_PROMPT = """You are a helpful assistant. Answer ONLY using the provided knowledge base context. \
+Cite specific sources when available. \
+Do NOT use your training data or general knowledge."""
+
+KB_ONLY_LOW_RELEVANCE_PROMPT = """You are a helpful assistant. You have been given knowledge base context that may only be \
+tangentially related to the user's question. If the context is at least somewhat related, do your best to answer using it. \
+If the context is completely unrelated, acknowledge that the knowledge base does not contain a direct answer to the question. \
+Do NOT use the phrase "I don't have information about this in my knowledge base." \
+Do NOT use your training data or general knowledge. Always mention what the available context does cover."""
+
+KB_ONLY_NO_RESULTS_PROMPT = """You are a helpful assistant. The knowledge base returned no results for the user's question. \
+Let the user know that no matching content was found in the knowledge base. \
+Suggest they try rephrasing their question or using Extended search for broader results. \
 Do NOT use your training data or general knowledge."""
 
 EXTENDED_SYSTEM_PROMPT = """You are a helpful AI assistant for AlphaBase knowledge base.
@@ -166,7 +176,10 @@ class AgentChatService:
 
         context_parts = []
         sources = []
+        top_score = 0.0
         for i, (doc, score) in enumerate(results):
+            if i == 0:
+                top_score = score
             meta = doc.metadata or {}
             title = meta.get("title", meta.get("page_title", "Unknown"))
             source_url = meta.get("source", "")
@@ -176,8 +189,18 @@ class AgentChatService:
             if source_url and source_url not in sources:
                 sources.append(source_url)
 
+        # Determine relevance from vectorstore scores
+        if not results:
+            kb_relevant = False
+            system_content = KB_ONLY_NO_RESULTS_PROMPT
+        elif top_score >= self.settings.kb_relevance_threshold:
+            kb_relevant = True
+            system_content = KB_ONLY_RELEVANT_PROMPT
+        else:
+            kb_relevant = False
+            system_content = KB_ONLY_LOW_RELEVANCE_PROMPT
+
         context = "\n\n".join(context_parts) if context_parts else ""
-        system_content = KB_ONLY_SYSTEM_PROMPT
         if context:
             system_content += f"\n\nContext:\n{context}"
 
@@ -200,6 +223,7 @@ class AgentChatService:
             "done": True,
             "sources": sources,
             "source_types": ["kb"] * len(sources),
+            "kb_relevant": kb_relevant,
             "full_response": full_response,
         }
 
