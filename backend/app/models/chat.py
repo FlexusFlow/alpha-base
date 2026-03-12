@@ -7,7 +7,7 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    project_id: str
+    chat_id: str
     message: str
     history: list[ChatMessage] = []
     extended_search: bool = False

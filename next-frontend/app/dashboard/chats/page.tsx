@@ -5,35 +5,35 @@ import { useRouter } from "next/navigation"
 import { Plus, MessageSquare, Trash2 } from "lucide-react"
 
 import { createClient } from "@/lib/supabase/client"
-import { Project } from "@/lib/types/project"
+import { Chat } from "@/lib/types/project"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
-export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([])
+export default function ChatsPage() {
+  const [chats, setChats] = useState<Chat[]>([])
   const [newName, setNewName] = useState("")
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    fetchProjects()
+    fetchChats()
   }, [])
 
-  async function fetchProjects() {
+  async function fetchChats() {
     const { data, error } = await supabase
       .from("projects")
       .select("*")
       .order("created_at", { ascending: false })
 
     if (!error && data) {
-      setProjects(data)
+      setChats(data)
     }
     setLoading(false)
   }
 
-  async function createProject() {
+  async function createChat() {
     const name = newName.trim()
     if (!name) return
 
@@ -48,11 +48,11 @@ export default function ProjectsPage() {
 
     if (!error && data) {
       setNewName("")
-      router.push(`/dashboard/projects/${data.id}`)
+      router.push(`/dashboard/chats/${data.id}`)
     }
   }
 
-  async function deleteProject(id: string, e: React.MouseEvent) {
+  async function deleteChat(id: string, e: React.MouseEvent) {
     e.stopPropagation()
     const { error } = await supabase
       .from("projects")
@@ -60,7 +60,7 @@ export default function ProjectsPage() {
       .eq("id", id)
 
     if (!error) {
-      setProjects(projects.filter((p) => p.id !== id))
+      setChats(chats.filter((c) => c.id !== id))
     }
   }
 
@@ -70,47 +70,47 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-8 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6">Projects</h1>
+      <h1 className="text-2xl font-bold mb-6">Chats</h1>
 
       <div className="flex gap-2 mb-6">
         <Input
-          placeholder="New project name..."
+          placeholder="New chat name..."
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && createProject()}
+          onKeyDown={(e) => e.key === "Enter" && createChat()}
         />
-        <Button onClick={createProject} disabled={!newName.trim()}>
+        <Button onClick={createChat} disabled={!newName.trim()}>
           <Plus className="h-4 w-4 mr-1" />
           New
         </Button>
       </div>
 
-      {projects.length === 0 ? (
+      {chats.length === 0 ? (
         <p className="text-muted-foreground">
-          No projects yet. Create one to start chatting with your knowledge base.
+          No chats yet. Create one to start chatting with your knowledge base.
         </p>
       ) : (
         <div className="space-y-2">
-          {projects.map((project) => (
+          {chats.map((chat) => (
             <Card
-              key={project.id}
+              key={chat.id}
               className="cursor-pointer hover:bg-accent/50 transition-colors"
-              onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+              onClick={() => router.push(`/dashboard/chats/${chat.id}`)}
             >
               <CardHeader className="flex flex-row items-center justify-between py-4">
                 <div className="flex items-center gap-3">
                   <MessageSquare className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <CardTitle className="text-base">{project.name}</CardTitle>
+                    <CardTitle className="text-base">{chat.name}</CardTitle>
                     <CardDescription>
-                      {new Date(project.created_at).toLocaleDateString()}
+                      {new Date(chat.created_at).toLocaleDateString()}
                     </CardDescription>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={(e) => deleteProject(project.id, e)}
+                  onClick={(e) => deleteChat(chat.id, e)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

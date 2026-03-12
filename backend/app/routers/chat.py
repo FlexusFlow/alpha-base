@@ -32,13 +32,13 @@ async def chat(
     supabase: Client = Depends(get_supabase),
     web_search_limiter: WebSearchLimiter = Depends(get_web_search_limiter),
 ):
-    # Resolve user_id from project ownership — never trust the client
-    project_result = supabase.table("projects").select("user_id").eq(
-        "id", request.project_id
+    # Resolve user_id from chat ownership — never trust the client
+    chat_result = supabase.table("projects").select("user_id").eq(
+        "id", request.chat_id
     ).single().execute()
-    if not project_result.data:
-        raise HTTPException(status_code=404, detail="Project not found")
-    user_id = project_result.data["user_id"]
+    if not chat_result.data:
+        raise HTTPException(status_code=404, detail="Chat not found")
+    user_id = chat_result.data["user_id"]
 
     chat_service = AgentChatService(
         settings, supabase=supabase, web_search_limiter=web_search_limiter,
@@ -75,13 +75,13 @@ async def chat(
         # Store messages in Supabase
         try:
             supabase.table("chat_messages").insert({
-                "project_id": request.project_id,
+                "project_id": request.chat_id,
                 "role": "user",
                 "content": request.message,
             }).execute()
 
             supabase.table("chat_messages").insert({
-                "project_id": request.project_id,
+                "project_id": request.chat_id,
                 "role": "assistant",
                 "content": full_response,
                 "sources": json.dumps(sources),

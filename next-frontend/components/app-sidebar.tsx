@@ -25,8 +25,8 @@ import {
 
 const items = [
   {
-    title: "Projects",
-    url: "/dashboard/projects",
+    title: "Chats",
+    url: "/dashboard/chats",
     icon: FolderKanban,
   },
   {

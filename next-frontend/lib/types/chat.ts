@@ -8,7 +8,7 @@ export interface ChatMessage {
 }
 
 export interface ChatRequest {
-  project_id: string
+  chat_id: string
   message: string
   history: ChatMessage[]
   extended_search?: boolean
