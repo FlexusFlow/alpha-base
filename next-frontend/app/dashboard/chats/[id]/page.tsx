@@ -8,7 +8,7 @@ interface Props {
   params: Promise<{ id: string }>
 }
 
-async function ProjectChatContent({ params }: { params: Promise<{ id: string }> }) {
+async function ChatContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
 
@@ -17,14 +17,14 @@ async function ProjectChatContent({ params }: { params: Promise<{ id: string }> 
     redirect("/auth/login")
   }
 
-  const { data: project } = await supabase
+  const { data: chat } = await supabase
     .from("projects")
     .select("id, name")
     .eq("id", id)
     .single()
 
-  if (!project) {
-    redirect("/dashboard/projects")
+  if (!chat) {
+    redirect("/dashboard/chats")
   }
 
   const { data: messages } = await supabase
@@ -42,17 +42,17 @@ async function ProjectChatContent({ params }: { params: Promise<{ id: string }> 
   return (
     <div className="flex flex-col h-[calc(100vh-2.5rem)]">
       <div className="border-b px-6 py-3">
-        <h1 className="text-lg font-semibold">{project.name}</h1>
+        <h1 className="text-lg font-semibold">{chat.name}</h1>
       </div>
-      <ChatWindow projectId={id} initialMessages={initialMessages} />
+      <ChatWindow chatId={id} initialMessages={initialMessages} />
     </div>
   )
 }
 
-export default function ProjectChatPage({ params }: Props) {
+export default function ChatPage({ params }: Props) {
   return (
     <Suspense fallback={<div className="p-8">Loading...</div>}>
-      <ProjectChatContent params={params} />
+      <ChatContent params={params} />
     </Suspense>
   )
 }

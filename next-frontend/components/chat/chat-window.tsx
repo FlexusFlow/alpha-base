@@ -17,11 +17,11 @@ import {
 import { ChatMessageBubble } from "./chat-message"
 
 interface Props {
-  projectId: string
+  chatId: string
   initialMessages: ChatMessage[]
 }
 
-export function ChatWindow({ projectId, initialMessages }: Props) {
+export function ChatWindow({ chatId, initialMessages }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [input, setInput] = useState("")
   const [streaming, setStreaming] = useState(false)
@@ -95,7 +95,7 @@ export function ChatWindow({ projectId, initialMessages }: Props) {
 
     await sendChatMessage(
       {
-        project_id: projectId,
+        chat_id: chatId,
         message: text,
         history: history.map(({ role, content }) => ({ role, content })),
         extended_search: extendedSearch,
